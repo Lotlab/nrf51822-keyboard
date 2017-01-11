@@ -43,7 +43,7 @@
 #include "ble_dis.h"
 #include "ble_conn_params.h"
 #include "bsp.h"
-#include "sensorsim.h"
+// #include "sensorsim.h"
 #include "bsp_btn_ble.h"
 #include "app_scheduler.h"
 #include "softdevice_handler_appsh.h"
@@ -58,10 +58,6 @@
     #include "ble_dfu.h"
     #include "dfu_app_handler.h"
 #endif // BLE_DFU_APP_SUPPORT
-
-#if BUTTONS_NUMBER <2
-#error "Not enough resources on board"
-#endif
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT  1                                              /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
@@ -78,9 +74,6 @@
 #define APP_TIMER_OP_QUEUE_SIZE          4                                              /**< Size of timer operation queues. */
 
 #define BATTERY_LEVEL_MEAS_INTERVAL      APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)     /**< Battery level measurement interval (ticks). */
-#define MIN_BATTERY_LEVEL                81                                             /**< Minimum simulated battery level. */
-#define MAX_BATTERY_LEVEL                100                                            /**< Maximum simulated battery level. */
-#define BATTERY_LEVEL_INCREMENT          1                                              /**< Increment between each simulated battery level measurement. */
 
 #define PNP_ID_VENDOR_ID_SOURCE          0x02                                           /**< Vendor ID Source. */
 #define PNP_ID_VENDOR_ID                 0x1915                                         /**< Vendor ID. */
@@ -212,9 +205,6 @@ static ble_bas_t                         m_bas;                                 
 static bool                              m_in_boot_mode = false;                        /**< Current protocol mode. */
 static uint16_t                          m_conn_handle = BLE_CONN_HANDLE_INVALID;       /**< Handle of the current connection. */
 
-static sensorsim_cfg_t                   m_battery_sim_cfg;                             /**< Battery Level sensor simulator configuration. */
-static sensorsim_state_t                 m_battery_sim_state;                           /**< Battery Level sensor simulator state. */
-
 APP_TIMER_DEF(m_battery_timer_id);                                                      /**< Battery timer. */
 
 static dm_application_instance_t         m_app_handle;                                  /**< Application identifier allocated by device manager. */
@@ -226,36 +216,6 @@ static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE
 #ifdef BLE_DFU_APP_SUPPORT    
 static ble_dfu_t                         m_dfus;                                    /**< Structure used to identify the DFU service. */
 #endif // BLE_DFU_APP_SUPPORT    
-
-static uint8_t m_sample_key_press_scan_str[] =                                          /**< Key pattern to be sent when the key press button has been pushed. */
-{
-    0x0b, /* Key h */
-    0x08, /* Key e */
-    0x0f, /* Key l */
-    0x0f, /* Key l */
-    0x12, /* Key o */
-    0x28  /* Key Return */
-};
-
-static uint8_t m_caps_on_key_scan_str[] =                                                /**< Key pattern to be sent when the output report has been written with the CAPS LOCK bit set. */
-{
-    0x06, /* Key C */
-    0x04, /* Key a */
-    0x13, /* Key p */
-    0x16, /* Key s */
-    0x12, /* Key o */
-    0x11, /* Key n */
-};
-
-static uint8_t m_caps_off_key_scan_str[] =                                               /**< Key pattern to be sent when the output report has been written with the CAPS LOCK bit cleared. */
-{
-    0x06, /* Key C */
-    0x04, /* Key a */
-    0x13, /* Key p */
-    0x16, /* Key s */
-    0x12, /* Key o */
-    0x09, /* Key f */
-};
 
 
 /** List to enqueue not just data to be sent, but also related information like the handle, connection handle etc */
@@ -310,7 +270,8 @@ static void battery_level_update(void)
     uint32_t err_code;
     uint8_t  battery_level;
 
-    battery_level = (uint8_t)sensorsim_measure(&m_battery_sim_state, &m_battery_sim_cfg);
+		// TODO: do some measure here!
+    battery_level = 100;
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
     if ((err_code != NRF_SUCCESS) &&
@@ -574,8 +535,6 @@ static void advertising_stop(void)
     err_code = sd_ble_gap_adv_stop();
     APP_ERROR_CHECK(err_code);
 
-    err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -645,8 +604,6 @@ static void reset_prepare(void)
         // Disconnect from peer.
         err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
         APP_ERROR_CHECK(err_code);
-        err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-        APP_ERROR_CHECK(err_code);
     }
     else
     {
@@ -699,14 +656,9 @@ static void services_init(void)
 
 /**@brief Function for initializing the battery sensor simulator.
  */
-static void sensor_simulator_init(void)
+static void battery_sensor_init(void)
 {
-    m_battery_sim_cfg.min          = MIN_BATTERY_LEVEL;
-    m_battery_sim_cfg.max          = MAX_BATTERY_LEVEL;
-    m_battery_sim_cfg.incr         = BATTERY_LEVEL_INCREMENT;
-    m_battery_sim_cfg.start_at_max = true;
-
-    sensorsim_init(&m_battery_sim_state, &m_battery_sim_cfg);
+		// Todo: add some code here!
 }
 
 
@@ -753,19 +705,6 @@ static void timers_start(void)
     APP_ERROR_CHECK(err_code);
 }
 
-
-
-/** @brief   Function for checking if the Shift key is pressed.
- *
- *  @returns true if the SHIFT_BUTTON is pressed. false otherwise.
- */
-static bool is_shift_key_pressed(void)
-{
-    bool result;
-    uint32_t err_code = bsp_button_is_pressed(SHIFT_BUTTON_ID,&result);
-    APP_ERROR_CHECK(err_code);
-    return result;
-}
 
 
 /**@brief   Function for transmitting a key scan Press & Release Notification.
@@ -827,11 +766,12 @@ static uint32_t send_key_scan_press_release(ble_hids_t *   p_hids,
         // Copy the scan code.
         memcpy(data + SCAN_CODE_POS + offset, p_key_pattern + offset, data_len - offset);
         
+			/**
         if (is_shift_key_pressed())
         {
             data[MODIFIER_KEY_POS] |= SHIFT_KEY_CODE;
         }
-
+			**/
         if (!m_in_boot_mode)
         {
             err_code = ble_hids_inp_rep_send(p_hids, 
@@ -1061,19 +1001,13 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
             if (!m_caps_on && ((report_val & OUTPUT_REPORT_BIT_MASK_CAPS_LOCK) != 0))
             {
                 // Caps Lock is turned On.
-                err_code = bsp_indication_set(BSP_INDICATE_ALERT_3);
-                APP_ERROR_CHECK(err_code);
-
-                keys_send(sizeof(m_caps_on_key_scan_str), m_caps_on_key_scan_str);
+                //keys_send(sizeof(m_caps_on_key_scan_str), m_caps_on_key_scan_str);
                 m_caps_on = true;
             }
             else if (m_caps_on && ((report_val & OUTPUT_REPORT_BIT_MASK_CAPS_LOCK) == 0))
             {
                 // Caps Lock is turned Off .
-                err_code = bsp_indication_set(BSP_INDICATE_ALERT_OFF);
-                APP_ERROR_CHECK(err_code);
-
-                keys_send(sizeof(m_caps_off_key_scan_str), m_caps_off_key_scan_str);
+                //keys_send(sizeof(m_caps_off_key_scan_str), m_caps_off_key_scan_str);
                 m_caps_on = false;
             }
             else
@@ -1091,12 +1025,12 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
  */
 static void sleep_mode_enter(void)
 {
-    uint32_t err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-    APP_ERROR_CHECK(err_code);
+    uint32_t err_code;
 
+    // Todo: Use custom sleep prepare code.
     // Prepare wakeup buttons.
-    err_code = bsp_btn_ble_sleep_mode_prepare();
-    APP_ERROR_CHECK(err_code);
+    // err_code = bsp_btn_ble_sleep_mode_prepare();
+    // APP_ERROR_CHECK(err_code);
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
     err_code = sd_power_system_off();
@@ -1213,24 +1147,24 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     switch (ble_adv_evt)
     {
         case BLE_ADV_EVT_DIRECTED:
-            err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_DIRECTED);
-            APP_ERROR_CHECK(err_code);
+            //err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_DIRECTED);
+            //APP_ERROR_CHECK(err_code);
             break;
         case BLE_ADV_EVT_FAST:
-            err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING);
-            APP_ERROR_CHECK(err_code);
+            //err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING);
+            //APP_ERROR_CHECK(err_code);
             break;
         case BLE_ADV_EVT_SLOW:
-            err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_SLOW);
-            APP_ERROR_CHECK(err_code);
+            //err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_SLOW);
+            //APP_ERROR_CHECK(err_code);
             break;
         case BLE_ADV_EVT_FAST_WHITELIST:
-            err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_WHITELIST);
-            APP_ERROR_CHECK(err_code);
+            //err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_WHITELIST);
+            //APP_ERROR_CHECK(err_code);
             break;
         case BLE_ADV_EVT_SLOW_WHITELIST:
-            err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_WHITELIST);
-            APP_ERROR_CHECK(err_code);
+            //err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING_WHITELIST);
+            //APP_ERROR_CHECK(err_code);
             break;
         case BLE_ADV_EVT_IDLE:
             sleep_mode_enter();
@@ -1289,9 +1223,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
-            APP_ERROR_CHECK(err_code);
-
             m_conn_handle      = p_ble_evt->evt.gap_evt.conn_handle;
             break;
 
@@ -1309,9 +1240,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             // Reset m_caps_on variable. Upon reconnect, the HID host will re-send the Output 
             // report containing the Caps lock state.
             m_caps_on = false;
-            // disabling alert 3. signal - used for capslock ON
-            err_code = bsp_indication_set(BSP_INDICATE_ALERT_OFF);
-            APP_ERROR_CHECK(err_code);
             break;
 
         case BLE_EVT_USER_MEM_REQUEST:
@@ -1371,7 +1299,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
     dm_ble_evt_handler(p_ble_evt);
-    bsp_btn_ble_on_ble_evt(p_ble_evt);
 #ifdef BLE_DFU_APP_SUPPORT /** @snippet [Propagating BLE Stack events to DFU Service] */
     ble_dfu_on_ble_evt(&m_dfus, p_ble_evt);
 #endif // BLE_DFU_APP_SUPPORT
@@ -1433,58 +1360,6 @@ static void ble_stack_init(void)
 static void scheduler_init(void)
 {
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-}
-
-
-/**@brief Function for handling events from the BSP module.
- *
- * @param[in]   event   Event generated by button press.
- */
-static void bsp_event_handler(bsp_event_t event)
-{
-    uint32_t err_code;
-    static uint8_t * p_key = m_sample_key_press_scan_str;
-    static uint8_t size = 0;
-
-    switch (event)
-    {
-        case BSP_EVENT_SLEEP:
-            sleep_mode_enter();
-            break;
-
-        case BSP_EVENT_DISCONNECT:
-            err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-            if (err_code != NRF_ERROR_INVALID_STATE)
-            {
-                APP_ERROR_CHECK(err_code);
-            }
-            break;
-
-        case BSP_EVENT_WHITELIST_OFF:
-            err_code = ble_advertising_restart_without_whitelist();
-            if (err_code != NRF_ERROR_INVALID_STATE)
-            {
-                APP_ERROR_CHECK(err_code);
-            }
-            break;
-
-        case BSP_EVENT_KEY_0:
-            if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
-            {
-                keys_send(1, p_key);
-                p_key++;
-                size++;
-                if (size == MAX_KEYS_IN_ONE_REPORT)
-                {
-                    p_key = m_sample_key_press_scan_str;
-                    size = 0;
-                }
-            }
-            break;
-
-        default:
-            break;
-    }
 }
 
 
@@ -1591,17 +1466,8 @@ static void device_manager_init(bool erase_bonds)
  */
 static void buttons_leds_init(bool * p_erase_bonds)
 {
-    bsp_event_t startup_event;
-
-    uint32_t err_code = bsp_init(BSP_INIT_LED | BSP_INIT_BUTTONS,
-                                 APP_TIMER_TICKS(100, APP_TIMER_PRESCALER),
-                                 bsp_event_handler);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = bsp_btn_ble_init(NULL, &startup_event);
-    APP_ERROR_CHECK(err_code);
-
-    *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
+    //Todo: add btn & led init code here
+    &p_erase_bonds = false;
 }
 
 
@@ -1631,7 +1497,7 @@ int main(void)
     gap_params_init();
     advertising_init();
     services_init();
-    sensor_simulator_init();
+    battery_sensor_init();
     conn_params_init();
     buffer_init();
 
