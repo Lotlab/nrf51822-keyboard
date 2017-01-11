@@ -51,13 +51,19 @@
 #include "device_manager.h"
 #include "app_button.h"
 #include "pstorage.h"
+#include "nrf_delay.h"
 #include "app_trace.h"
+
+#ifdef BLE_DFU_APP_SUPPORT
+    #include "ble_dfu.h"
+    #include "dfu_app_handler.h"
+#endif // BLE_DFU_APP_SUPPORT
 
 #if BUTTONS_NUMBER <2
 #error "Not enough resources on board"
 #endif
 
-#define IS_SRVC_CHANGED_CHARACT_PRESENT  0                                              /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
+#define IS_SRVC_CHANGED_CHARACT_PRESENT  1                                              /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
 #define UART_TX_BUF_SIZE 256                                                            /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE 1                                                              /**< UART RX buffer size. */
@@ -129,6 +135,16 @@
 #define SHIFT_KEY_CODE                   0x02                                           /**< Key code indicating the press of the Shift Key. */
 
 #define MAX_KEYS_IN_ONE_REPORT           (INPUT_REPORT_KEYS_MAX_LEN - SCAN_CODE_POS)    /**< Maximum number of key presses that can be sent in one Input Report. */
+
+#ifdef BLE_DFU_APP_SUPPORT
+#define DFU_REV_MAJOR                    0x00                                       /** DFU Major revision number to be exposed. */
+#define DFU_REV_MINOR                    0x01                                       /** DFU Minor revision number to be exposed. */
+#define DFU_REVISION                     ((DFU_REV_MAJOR << 8) | DFU_REV_MINOR)     /** DFU Revision number to be exposed. Combined of major and minor versions. */
+#define APP_SERVICE_HANDLE_START         0x000C                                     /**< Handle of first application specific service when when service changed characteristic is present. */
+#define BLE_HANDLE_MAX                   0xFFFF                                     /**< Max handle value in BLE. */
+
+STATIC_ASSERT(IS_SRVC_CHANGED_CHARACT_PRESENT);                                     /** When having DFU Service support in application the Service Changed Characteristic should always be present. */
+#endif // BLE_DFU_APP_SUPPORT
 
 
 /**Buffer queue access macros
@@ -206,6 +222,10 @@ static dm_handle_t                       m_bonded_peer_handle;                  
 static bool                              m_caps_on = false;                             /**< Variable to indicate if Caps Lock is turned on. */
 
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}};
+
+#ifdef BLE_DFU_APP_SUPPORT    
+static ble_dfu_t                         m_dfus;                                    /**< Structure used to identify the DFU service. */
+#endif // BLE_DFU_APP_SUPPORT    
 
 static uint8_t m_sample_key_press_scan_str[] =                                          /**< Key pattern to be sent when the key press button has been pushed. */
 {
@@ -544,6 +564,126 @@ static void hids_init(void)
 }
 
 
+#ifdef BLE_DFU_APP_SUPPORT
+/**@brief Function for stopping advertising.
+ */
+static void advertising_stop(void)
+{
+    uint32_t err_code;
+
+    err_code = sd_ble_gap_adv_stop();
+    APP_ERROR_CHECK(err_code);
+
+    err_code = bsp_indication_set(BSP_INDICATE_IDLE);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+/**@brief Function for loading application-specific context after establishing a secure connection.
+ *
+ * @details This function will load the application context and check if the ATT table is marked as 
+ *          changed. If the ATT table is marked as changed, a Service Changed Indication
+ *          is sent to the peer if the Service Changed CCCD is set to indicate.
+ *
+ * @param[in] p_handle The Device Manager handle that identifies the connection for which the context 
+ *                     should be loaded.
+ */
+static void app_context_load(dm_handle_t const * p_handle)
+{
+    uint32_t                 err_code;
+    static uint32_t          context_data;
+    dm_application_context_t context;
+
+    context.len    = sizeof(context_data);
+    context.p_data = (uint8_t *)&context_data;
+
+    err_code = dm_application_context_get(p_handle, &context);
+    if (err_code == NRF_SUCCESS)
+    {
+        // Send Service Changed Indication if ATT table has changed.
+        if ((context_data & (DFU_APP_ATT_TABLE_CHANGED << DFU_APP_ATT_TABLE_POS)) != 0)
+        {
+            err_code = sd_ble_gatts_service_changed(m_conn_handle, APP_SERVICE_HANDLE_START, BLE_HANDLE_MAX);
+            if ((err_code != NRF_SUCCESS) &&
+                (err_code != BLE_ERROR_INVALID_CONN_HANDLE) &&
+                (err_code != NRF_ERROR_INVALID_STATE) &&
+                (err_code != BLE_ERROR_NO_TX_BUFFERS) &&
+                (err_code != NRF_ERROR_BUSY) &&
+                (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING))
+            {
+                APP_ERROR_HANDLER(err_code);
+            }
+        }
+
+        err_code = dm_application_context_delete(p_handle);
+        APP_ERROR_CHECK(err_code);
+    }
+    else if (err_code == DM_NO_APP_CONTEXT)
+    {
+        // No context available. Ignore.
+    }
+    else
+    {
+        APP_ERROR_HANDLER(err_code);
+    }
+}
+
+
+/** @snippet [DFU BLE Reset prepare] */
+/**@brief Function for preparing for system reset.
+ *
+ * @details This function implements @ref dfu_app_reset_prepare_t. It will be called by 
+ *          @ref dfu_app_handler.c before entering the bootloader/DFU.
+ *          This allows the current running application to shut down gracefully.
+ */
+static void reset_prepare(void)
+{
+    uint32_t err_code;
+
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
+    {
+        // Disconnect from peer.
+        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+        APP_ERROR_CHECK(err_code);
+        err_code = bsp_indication_set(BSP_INDICATE_IDLE);
+        APP_ERROR_CHECK(err_code);
+    }
+    else
+    {
+        // If not connected, the device will be advertising. Hence stop the advertising.
+        advertising_stop();
+    }
+
+    err_code = ble_conn_params_stop();
+    APP_ERROR_CHECK(err_code);
+
+    nrf_delay_ms(500);
+}
+
+static void dfu_init(void)
+{
+    uint32_t err_code;
+    ble_dfu_init_t   dfus_init;
+
+    // Initialize the Device Firmware Update Service.
+    memset(&dfus_init, 0, sizeof(dfus_init));
+
+    dfus_init.evt_handler   = dfu_app_on_dfu_evt;
+    dfus_init.error_handler = NULL;
+    dfus_init.evt_handler   = dfu_app_on_dfu_evt;
+    dfus_init.revision      = DFU_REVISION;
+
+    err_code = ble_dfu_init(&m_dfus, &dfus_init);
+    APP_ERROR_CHECK(err_code);
+
+    dfu_app_reset_prepare_set(reset_prepare);
+    dfu_app_dm_appl_instance_set(m_app_handle);
+
+}
+/** @snippet [DFU BLE Reset prepare] */
+#endif // BLE_DFU_APP_SUPPORT
+
+
 /**@brief Function for initializing services that will be used by the application.
  */
 static void services_init(void)
@@ -551,6 +691,9 @@ static void services_init(void)
     dis_init();
     bas_init();
     hids_init();
+#ifdef BLE_DFU_APP_SUPPORT
+    dfu_init();
+#endif // BLE_DFU_APP_SUPPORT
 }
 
 
@@ -1229,6 +1372,9 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
     dm_ble_evt_handler(p_ble_evt);
     bsp_btn_ble_on_ble_evt(p_ble_evt);
+#ifdef BLE_DFU_APP_SUPPORT /** @snippet [Propagating BLE Stack events to DFU Service] */
+    ble_dfu_on_ble_evt(&m_dfus, p_ble_evt);
+#endif // BLE_DFU_APP_SUPPORT
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
     ble_conn_params_on_ble_evt(p_ble_evt);
@@ -1390,6 +1536,11 @@ static uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
         case DM_EVT_SECURITY_SETUP_COMPLETE:
             m_bonded_peer_handle = (*p_handle);
             break;
+#ifdef BLE_DFU_APP_SUPPORT
+        case DM_EVT_LINK_SECURED:
+            app_context_load(p_handle);
+            break;
+#endif // BLE_DFU_APP_SUPPORT
     }
 
     return NRF_SUCCESS;

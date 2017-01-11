@@ -1,4 +1,6 @@
 /ble_app_hids_keyboard.eww
-/config
 /hex
 /pca10028
+/config/ble_app_hids_keyboard_s110_spi_pca10028
+/config/ble_app_hids_keyboard_s130_pca10028
+/config/ble_app_hids_keyboard_s130_spi_pca10028
