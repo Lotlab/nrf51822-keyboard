@@ -30,9 +30,11 @@
 #include <string.h>
 #include "nordic_common.h"
 #include "nrf.h"
+#include "keyboard_conf.h"
 #include "nrf_assert.h"
 #include "app_error.h"
 #include "nrf_gpio.h"
+#include "nrf_adc.h"
 #include "ble.h"
 #include "ble_hci.h"
 #include "ble_srv_common.h"
@@ -53,6 +55,8 @@
 #include "pstorage.h"
 #include "nrf_delay.h"
 #include "app_trace.h"
+#include "keyboard_driver.h"
+#include "keycode.h"
 
 #ifdef BLE_DFU_APP_SUPPORT
     #include "ble_dfu.h"
@@ -64,16 +68,15 @@
 #define UART_TX_BUF_SIZE 256                                                            /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE 1                                                              /**< UART RX buffer size. */
 
-#define KEY_PRESS_BUTTON_ID              0                                              /**< Button used as Keyboard key press. */
-#define SHIFT_BUTTON_ID                  1                                              /**< Button used as 'SHIFT' Key. */
-
 #define DEVICE_NAME                      "Nordic_Keyboard"                              /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME                "NordicSemiconductor"                          /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define APP_TIMER_PRESCALER              0                                              /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE          4                                              /**< Size of timer operation queues. */
 
-#define BATTERY_LEVEL_MEAS_INTERVAL      APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)     /**< Battery level measurement interval (ticks). */
+#define BATTERY_LEVEL_MEAS_INTERVAL      APP_TIMER_TICKS(60000, APP_TIMER_PRESCALER)    /**< Battery level measurement interval (ticks). */
+#define BATTERY_LEVEL_SEND_INTERVAL      APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)     /**< Battert level report interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL      	 APP_TIMER_TICKS(25, APP_TIMER_PRESCALER)       /**< Keyboard scan interval (ticks). */
 
 #define PNP_ID_VENDOR_ID_SOURCE          0x02                                           /**< Vendor ID Source. */
 #define PNP_ID_VENDOR_ID                 0x1915                                         /**< Vendor ID. */
@@ -105,7 +108,9 @@
 #define OUTPUT_REPORT_INDEX              0                                              /**< Index of Output Report. */
 #define OUTPUT_REPORT_MAX_LEN            1                                              /**< Maximum length of Output Report. */
 #define INPUT_REPORT_KEYS_INDEX          0                                              /**< Index of Input Report. */
+#define OUTPUT_REPORT_BIT_MASK_NUM_LOCK 0x01                                            /**< NUM LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
 #define OUTPUT_REPORT_BIT_MASK_CAPS_LOCK 0x02                                           /**< CAPS LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
+#define OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK 0x03                                         /**< SCROLL LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
 #define INPUT_REP_REF_ID                 0                                              /**< Id of reference to Keyboard Input Report. */
 #define OUTPUT_REP_REF_ID                0                                              /**< Id of reference to Keyboard Output Report. */
 
@@ -125,7 +130,6 @@
 
 #define MODIFIER_KEY_POS                 0                                              /**< Position of the modifier byte in the Input Report. */
 #define SCAN_CODE_POS                    2                                              /**< This macro indicates the start position of the key scan code in a HID Report. As per the document titled 'Device Class Definition for Human Interface Devices (HID) V1.11, each report shall have one modifier byte followed by a reserved constant byte and then the key scan code. */
-#define SHIFT_KEY_CODE                   0x02                                           /**< Key code indicating the press of the Shift Key. */
 
 #define MAX_KEYS_IN_ONE_REPORT           (INPUT_REPORT_KEYS_MAX_LEN - SCAN_CODE_POS)    /**< Maximum number of key presses that can be sent in one Input Report. */
 
@@ -140,7 +144,7 @@ STATIC_ASSERT(IS_SRVC_CHANGED_CHARACT_PRESENT);                                 
 #endif // BLE_DFU_APP_SUPPORT
 
 
-/**Buffer queue access macros
+/** 缓存队列访问宏
  *
  * @{ */
 /** Initialization of buffer list */
@@ -205,11 +209,12 @@ static ble_bas_t                         m_bas;                                 
 static bool                              m_in_boot_mode = false;                        /**< Current protocol mode. */
 static uint16_t                          m_conn_handle = BLE_CONN_HANDLE_INVALID;       /**< Handle of the current connection. */
 
-APP_TIMER_DEF(m_battery_timer_id);                                                      /**< Battery timer. */
+APP_TIMER_DEF(m_battery_timer_id);          
+APP_TIMER_DEF(m_battery_timer_meas_id);                                                  /**< Battery timer. */
+APP_TIMER_DEF(m_keyboard_scan_timer_id);
 
 static dm_application_instance_t         m_app_handle;                                  /**< Application identifier allocated by device manager. */
 static dm_handle_t                       m_bonded_peer_handle;                          /**< Device reference handle to the current bonded central. */
-static bool                              m_caps_on = false;                             /**< Variable to indicate if Caps Lock is turned on. */
 
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}};
 
@@ -222,6 +227,12 @@ static ble_dfu_t                         m_dfus;                                
 static buffer_list_t buffer_list;
 
 static void on_hids_evt(ble_hids_t * p_hids, ble_hids_evt_t * p_evt);
+
+volatile int32_t adc_sample;
+
+
+static void sleep_mode_enter(void);
+static void keys_send(uint8_t key_pattern_len, uint8_t * p_key_pattern);
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -263,15 +274,15 @@ static void ble_advertising_error_handler(uint32_t nrf_error)
 }
 
 
-/**@brief Function for performing a battery measurement, and update the Battery Level characteristic in the Battery Service.
+/**@brief 上传电量数据
  */
 static void battery_level_update(void)
 {
     uint32_t err_code;
     uint8_t  battery_level;
 
-		// TODO: do some measure here!
-    battery_level = 100;
+    // TODO: do some measure here!
+    battery_level = adc_sample - 500;
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
     if ((err_code != NRF_SUCCESS) &&
@@ -285,9 +296,9 @@ static void battery_level_update(void)
 }
 
 
-/**@brief Function for handling the Battery measurement timer timeout.
+/**@brief 电量测量计时器溢出处理函数
  *
- * @details This function will be called each time the battery level measurement timer expires.
+ * @details 当电量状态需要测量时调用此函数
  *
  * @param[in]   p_context   Pointer used for passing some arbitrary information (context) from the
  *                          app_start_timer() call to the timeout handler.
@@ -295,10 +306,50 @@ static void battery_level_update(void)
 static void battery_level_meas_timeout_handler(void * p_context)
 {
     UNUSED_PARAMETER(p_context);
+    nrf_adc_start();
+}
+
+
+/**@brief 电量上报计时器溢出处理函数
+ *
+ * @details 当电量状态需要上报时调用此函数
+ *
+ * @param[in]   p_context   Pointer used for passing some arbitrary information (context) from the
+ *                          app_start_timer() call to the timeout handler.
+ */
+static void battery_level_send_timeout_handler(void * p_context)
+{
+    UNUSED_PARAMETER(p_context);
     battery_level_update();
 }
 
-/**@brief Function for the Timer initialization.
+/**@brief Function for handling the keyboard scan timer timeout.
+ *
+ * @details This function will be called each time the keyboard scan timer expires.
+ *
+ */
+static void keyboard_scan_timeout_handler(void * p_context)
+{
+    UNUSED_PARAMETER(p_context);
+	const uint8_t *key_packet;
+    uint8_t        key_packet_size;
+    if (new_packet(&key_packet, &key_packet_size))
+    {
+        for(uint_fast8_t i=0; i< key_packet_size; i++)
+        {
+            if(key_packet[i] == KC_FN15){
+				sleep_mode_enter();
+			}
+        }	
+        if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
+        {
+            keys_send(key_packet_size,(uint8_t *)&key_packet[0]);
+        }
+	}
+}
+
+
+/**@brief 计时器初始化函数
  *
  * @details Initializes the timer module.
  */
@@ -312,7 +363,19 @@ static void timers_init(void)
     // Create battery timer.
     err_code = app_timer_create(&m_battery_timer_id,
                                 APP_TIMER_MODE_REPEATED,
+                                battery_level_send_timeout_handler);
+
+    APP_ERROR_CHECK(err_code);
+    err_code = app_timer_create(&m_battery_timer_meas_id,
+                                APP_TIMER_MODE_REPEATED,
                                 battery_level_meas_timeout_handler);
+                                
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_create(&m_keyboard_scan_timer_id,
+                                APP_TIMER_MODE_REPEATED,
+                                keyboard_scan_timeout_handler);
+                                
     APP_ERROR_CHECK(err_code);
 }
 
@@ -526,7 +589,7 @@ static void hids_init(void)
 
 
 #ifdef BLE_DFU_APP_SUPPORT
-/**@brief Function for stopping advertising.
+/**@brief 停止广播
  */
 static void advertising_stop(void)
 {
@@ -641,7 +704,7 @@ static void dfu_init(void)
 #endif // BLE_DFU_APP_SUPPORT
 
 
-/**@brief Function for initializing services that will be used by the application.
+/**@brief 初始化程序所需的服务
  */
 static void services_init(void)
 {
@@ -654,13 +717,32 @@ static void services_init(void)
 }
 
 
-/**@brief Function for initializing the battery sensor simulator.
+/**@brief 初始化电量测量ADC
  */
 static void battery_sensor_init(void)
 {
-		// Todo: add some code here!
+    // Todo: add some code here!
+    const nrf_adc_config_t nrf_adc_config = { NRF_ADC_CONFIG_RES_10BIT,     // 10Bit 精度
+                                 NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE ,  // 完整输入
+                                 NRF_ADC_CONFIG_REF_VBG };                  // 内置 1.2V 基准
+
+    // Initialize and configure ADC
+    nrf_adc_configure( (nrf_adc_config_t *)&nrf_adc_config);
+    nrf_adc_input_select(KEYBOARD_ADC);
+    nrf_adc_int_enable(ADC_INTENSET_END_Enabled << ADC_INTENSET_END_Pos);
+    NVIC_SetPriority(ADC_IRQn, NRF_APP_PRIORITY_LOW);
+    NVIC_EnableIRQ(ADC_IRQn);
 }
 
+/**
+ * @brief ADC 测量数据Handler
+ */
+void ADC_IRQHandler(void)
+{
+    nrf_adc_conversion_event_clean();
+
+    adc_sample = nrf_adc_result_get();
+}
 
 /**@brief Function for handling a Connection Parameters error.
  *
@@ -695,13 +777,19 @@ static void conn_params_init(void)
 }
 
 
-/**@brief Function for starting timers.
+/**@brief 计时器启动函数
  */
 static void timers_start(void)
 {
     uint32_t err_code;
 
-    err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL, NULL);
+    err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_SEND_INTERVAL, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_start(m_battery_timer_meas_id, BATTERY_LEVEL_MEAS_INTERVAL, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_start(m_keyboard_scan_timer_id, KEYBOARD_SCAN_INTERVAL, NULL);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -998,22 +1086,24 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
                                              &report_val);
             APP_ERROR_CHECK(err_code);
 
-            if (!m_caps_on && ((report_val & OUTPUT_REPORT_BIT_MASK_CAPS_LOCK) != 0))
-            {
-                // Caps Lock is turned On.
-                //keys_send(sizeof(m_caps_on_key_scan_str), m_caps_on_key_scan_str);
-                m_caps_on = true;
-            }
-            else if (m_caps_on && ((report_val & OUTPUT_REPORT_BIT_MASK_CAPS_LOCK) == 0))
-            {
-                // Caps Lock is turned Off .
-                //keys_send(sizeof(m_caps_off_key_scan_str), m_caps_off_key_scan_str);
-                m_caps_on = false;
-            }
+
+            if (report_val & OUTPUT_REPORT_BIT_MASK_NUM_LOCK)
+                nrf_gpio_pin_set(LED_NUM);
             else
-            {
+                nrf_gpio_pin_clear(LED_NUM);
+
+            if (report_val & OUTPUT_REPORT_BIT_MASK_CAPS_LOCK)
+                nrf_gpio_pin_set(LED_CAPS);
+            else
+                nrf_gpio_pin_clear(LED_CAPS);
+
+            if (report_val & OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK)
+                nrf_gpio_pin_set(LED_SCLK);
+            else
+                nrf_gpio_pin_clear(LED_SCLK);
+
                 // The report received is not supported by this application. Do nothing.
-            }
+            
         }
     }
 }
@@ -1033,6 +1123,7 @@ static void sleep_mode_enter(void)
     // APP_ERROR_CHECK(err_code);
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
+    sleep_mode_prepare();
     err_code = sd_power_system_off();
     APP_ERROR_CHECK(err_code);
 }
@@ -1239,7 +1330,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 
             // Reset m_caps_on variable. Upon reconnect, the HID host will re-send the Output 
             // report containing the Caps lock state.
-            m_caps_on = false;
             break;
 
         case BLE_EVT_USER_MEM_REQUEST:
@@ -1464,10 +1554,15 @@ static void device_manager_init(bool erase_bonds)
  *
  * @param[out] p_erase_bonds  Will be true if the clear bonding button was pressed to wake the application up.
  */
-static void buttons_leds_init(bool * p_erase_bonds)
+static void buttons_leds_init(void)
 {
     //Todo: add btn & led init code here
-    &p_erase_bonds = false;
+    cherry8x16_init();
+
+    nrf_gpio_cfg_output(LED_NUM);
+    nrf_gpio_cfg_output(LED_CAPS);
+    nrf_gpio_cfg_output(LED_SCLK);
+
 }
 
 
@@ -1484,16 +1579,15 @@ static void power_manage(void)
  */
 int main(void)
 {
-    bool erase_bonds;
     uint32_t err_code;
 
     // Initialize.
     app_trace_init();
     timers_init();
-    buttons_leds_init(&erase_bonds);
+    buttons_leds_init();
     ble_stack_init();
     scheduler_init();
-    device_manager_init(erase_bonds);
+    device_manager_init(false);
     gap_params_init();
     advertising_init();
     services_init();
