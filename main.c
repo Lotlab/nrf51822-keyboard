@@ -282,7 +282,10 @@ static void battery_level_update(void)
     uint8_t  battery_level;
 
     // TODO: do some measure here!
-    battery_level = adc_sample - 500;
+    if(adc_sample > 500 && adc_sample < 650)
+        battery_level = adc_sample - 500;
+    else
+        battery_level = 50;
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
     if ((err_code != NRF_SUCCESS) &&
@@ -722,7 +725,7 @@ static void services_init(void)
 static void battery_sensor_init(void)
 {
     // Todo: add some code here!
-    const nrf_adc_config_t nrf_adc_config = { NRF_ADC_CONFIG_RES_10BIT,     // 10Bit 精度
+    nrf_adc_config_t nrf_adc_config = { NRF_ADC_CONFIG_RES_10BIT,     // 10Bit 精度
                                  NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE ,  // 完整输入
                                  NRF_ADC_CONFIG_REF_VBG };                  // 内置 1.2V 基准
 
@@ -1423,7 +1426,7 @@ static void ble_stack_init(void)
     uint32_t err_code;
 
     // Initialize the SoftDevice handler module.
-    SOFTDEVICE_HANDLER_APPSH_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, true);
+    SOFTDEVICE_HANDLER_APPSH_INIT(NRF_CLOCK_LFCLKSRC_RC_250_PPM_250MS_CALIBRATION, true);
 
     // Enable BLE stack 
     ble_enable_params_t ble_enable_params;
@@ -1587,7 +1590,7 @@ int main(void)
     buttons_leds_init();
     ble_stack_init();
     scheduler_init();
-    device_manager_init(false);
+    device_manager_init(true);
     gap_params_init();
     advertising_init();
     services_init();

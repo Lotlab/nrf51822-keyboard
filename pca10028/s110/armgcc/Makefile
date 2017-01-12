@@ -78,6 +78,7 @@ ASM_SOURCE_FILES  = $(abspath ../../../../../../components/toolchain/gcc/gcc_sta
 #includes common to all targets
 INC_PATHS  = -I$(abspath ../../../config/ble_app_hids_keyboard_s110_pca10028)
 INC_PATHS += -I$(abspath ../../../config)
+INC_PATHS += -I$(abspath ../../..)
 INC_PATHS += -I$(abspath ../../../../../../components/libraries/bootloader_dfu)
 INC_PATHS += -I$(abspath ../../../../../../components/libraries/scheduler)
 INC_PATHS += -I$(abspath ../../../../../../components/drivers_nrf/config)
@@ -241,8 +242,8 @@ cleanobj:
 	$(RM) $(BUILD_DIRECTORIES)/*.o
 
 flash: $(MAKECMDGOALS)
-	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/$<.hex
-	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/$<.hex -f nrf51  --sectorerase
+	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/nrf51422_xxac_s110.hex
+	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/nrf51422_xxac_s110.hex -f nrf51  --sectorerase
 	nrfjprog --reset
 
 ## Flash softdevice
