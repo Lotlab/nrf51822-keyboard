@@ -45,7 +45,7 @@ void sleep_mode_prepare(void)
 			nrf_gpio_pin_clear((uint32_t)row_pin_array[i]);
 		}
 		nrf_gpio_pin_set((uint32_t)row_pin_array[wakeup_button_column_index]);
-		nrf_gpio_cfg_sense_input(column_pin_array[wakeup_button_row_index], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
+		nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[wakeup_button_row_index], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
 }
 
 bool cherry8x16_init(void)

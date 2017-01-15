@@ -10,3 +10,8 @@
 /pca10028/s130
 /pca10028/ser_s110_spi
 /pca10028/ser_s130_spi
+*.o
+*.out
+*.hex
+*.bin
+*.map
