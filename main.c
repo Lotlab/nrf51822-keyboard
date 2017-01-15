@@ -216,7 +216,7 @@ APP_TIMER_DEF(m_keyboard_scan_timer_id);
 static dm_application_instance_t         m_app_handle;                                  /**< Application identifier allocated by device manager. */
 static dm_handle_t                       m_bonded_peer_handle;                          /**< Device reference handle to the current bonded central. */
 
-static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}};
+static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}};
 
 #ifdef BLE_DFU_APP_SUPPORT    
 static ble_dfu_t                         m_dfus;                                    /**< Structure used to identify the DFU service. */
