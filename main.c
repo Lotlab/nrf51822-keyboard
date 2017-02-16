@@ -74,7 +74,7 @@
 #define APP_TIMER_PRESCALER              0                                              /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE          4                                              /**< Size of timer operation queues. */
 
-#define BATTERY_LEVEL_MEAS_INTERVAL      APP_TIMER_TICKS(60000, APP_TIMER_PRESCALER)    /**< Battery level measurement interval (ticks). */
+#define BATTERY_LEVEL_MEAS_INTERVAL      APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER)    /**< Battery level measurement interval (ticks). */
 #define BATTERY_LEVEL_SEND_INTERVAL      APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)     /**< Battert level report interval (ticks). */
 #define KEYBOARD_SCAN_INTERVAL      	 APP_TIMER_TICKS(25, APP_TIMER_PRESCALER)       /**< Keyboard scan interval (ticks). */
 
@@ -228,8 +228,8 @@ static buffer_list_t buffer_list;
 
 static void on_hids_evt(ble_hids_t * p_hids, ble_hids_evt_t * p_evt);
 
-volatile int32_t adc_sample;
-
+volatile int32_t adc_sample,adc_sample_temp;
+int8_t adc_cycle = 0;
 
 static void sleep_mode_enter(void);
 static void keys_send(uint8_t key_pattern_len, uint8_t * p_key_pattern);
@@ -283,9 +283,11 @@ static void battery_level_update(void)
 
     // TODO: do some measure here!
     if(adc_sample > 500 && adc_sample < 650)
-        battery_level = adc_sample - 500;
+        battery_level = (adc_sample - 500)/1.5;
     else
-        battery_level = 50;
+        battery_level = 0;
+	
+	//battery_level = adc_sample / 10;
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
     if ((err_code != NRF_SUCCESS) &&
@@ -743,8 +745,21 @@ static void battery_sensor_init(void)
 void ADC_IRQHandler(void)
 {
     nrf_adc_conversion_event_clean();
+		adc_cycle++;
+		adc_sample_temp += nrf_adc_result_get();
+		if(adc_cycle >= 5)
+		{
+			    adc_sample = adc_sample_temp / 5;
+					adc_sample_temp = 0;
+					adc_cycle = 0;
+		}
+		else
+		{
+					nrf_adc_start();
+		}
+		
 
-    adc_sample = nrf_adc_result_get();
+	  
 }
 
 /**@brief Function for handling a Connection Parameters error.
@@ -1602,6 +1617,8 @@ int main(void)
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
+	
+	  nrf_gpio_pin_set(LED_NUM);
 
     // Enter main loop.
     for (;;)

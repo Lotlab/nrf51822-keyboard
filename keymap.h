@@ -6,8 +6,8 @@
 #define MATRIX_COLS    14 // !< Number of columns in the keyboard matrix
 #define MATRIX_ROWS    8  // !< Number of rows in the keyboard matrix
 
-static const uint8_t row_pin_array[MATRIX_ROWS] = {19,18,17,16,15,14,13,12};
-static const uint8_t column_pin_array[MATRIX_COLS] = {7,5,4,3,2,21,22,28,29,30,8,9,10,11};
+static const uint8_t row_pin_array[MATRIX_ROWS] = {21,22,23,24,25,26,27,29};
+static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0,30,28};
 
 static const uint8_t wakeup_button_row_index = 0;		
 static const uint8_t wakeup_button_column_index = 0;	
