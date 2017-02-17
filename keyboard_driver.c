@@ -50,12 +50,6 @@ void sleep_mode_prepare(void)
 
 bool cherry8x16_init(void)
 {
-    if (row_pin_array == 0 || column_pin_array == 0)
-    {
-		return false;	//return if pins have not been define
-    }
-    else
-    {
 		for (uint_fast8_t i = MATRIX_ROWS; i--;)
         {
 			nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
@@ -66,7 +60,6 @@ bool cherry8x16_init(void)
         {
 			nrf_gpio_cfg_input((uint32_t)column_pin_array[i],NRF_GPIO_PIN_PULLDOWN);
 		}
-    }
     return true;
 }
 
@@ -141,7 +134,7 @@ static void matrix_to_keycode(uint16_t * matrix, uint8_t * pressed_keys, uint8_t
     for(uint_fast8_t i=0; i<count; i++) // 替换按键
     {
         uint_fast8_t keycode;
-        if(fn && press_normal != KC_NO)
+        if(fn && (press_normal[i] != KC_NO))
         {
             keycode = press_fn[i];
         }

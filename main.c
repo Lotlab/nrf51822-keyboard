@@ -395,6 +395,7 @@ static void gap_params_init(void)
     uint32_t                err_code;
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
+	
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
@@ -415,6 +416,14 @@ static void gap_params_init(void)
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
+																					
+																						  //下面是添加设置配对密码
+		uint8_t passcode[] = "000000";
+	  //uint8_t *passcode="000000";
+    ble_opt_t 	static_option;
+	  static_option.gap_opt.passkey.p_passkey = passcode;
+	  err_code =  sd_ble_opt_set(BLE_GAP_OPT_PASSKEY, &static_option);
+	  APP_ERROR_CHECK(err_code);
 }
 
 
@@ -1137,11 +1146,12 @@ static void sleep_mode_enter(void)
 
     // Todo: Use custom sleep prepare code.
     // Prepare wakeup buttons.
-    // err_code = bsp_btn_ble_sleep_mode_prepare();
-    // APP_ERROR_CHECK(err_code);
+		sleep_mode_prepare();
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
-    sleep_mode_prepare();
+		
+		nrf_gpio_pin_clear(LED_SCLK);
+
     err_code = sd_power_system_off();
     APP_ERROR_CHECK(err_code);
 }
@@ -1580,6 +1590,9 @@ static void buttons_leds_init(void)
     nrf_gpio_cfg_output(LED_NUM);
     nrf_gpio_cfg_output(LED_CAPS);
     nrf_gpio_cfg_output(LED_SCLK);
+	
+			
+	  nrf_gpio_pin_set(LED_SCLK);
 
 }
 
@@ -1613,12 +1626,13 @@ int main(void)
     conn_params_init();
     buffer_init();
 
+	
+
+	
     // Start execution.
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
-	
-	  nrf_gpio_pin_set(LED_NUM);
 
     // Enter main loop.
     for (;;)
