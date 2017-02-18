@@ -108,9 +108,9 @@
 #define OUTPUT_REPORT_INDEX              0                                              /**< Index of Output Report. */
 #define OUTPUT_REPORT_MAX_LEN            1                                              /**< Maximum length of Output Report. */
 #define INPUT_REPORT_KEYS_INDEX          0                                              /**< Index of Input Report. */
-#define OUTPUT_REPORT_BIT_MASK_NUM_LOCK 0x01                                            /**< NUM LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
-#define OUTPUT_REPORT_BIT_MASK_CAPS_LOCK 0x02                                           /**< CAPS LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
-#define OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK 0x03                                         /**< SCROLL LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
+#define OUTPUT_REPORT_BIT_MASK_NUM_LOCK 0x00                                            /**< NUM LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
+#define OUTPUT_REPORT_BIT_MASK_CAPS_LOCK 0x01                                           /**< CAPS LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
+#define OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK 0x02                                         /**< SCROLL LOCK bit in Output Report (based on 'LED Page (0x08)' of the Universal Serial Bus HID Usage Tables). */
 #define INPUT_REP_REF_ID                 0                                              /**< Id of reference to Keyboard Input Report. */
 #define OUTPUT_REP_REF_ID                0                                              /**< Id of reference to Keyboard Output Report. */
 
@@ -208,6 +208,7 @@ static ble_hids_t                        m_hids;                                
 static ble_bas_t                         m_bas;                                         /**< Structure used to identify the battery service. */
 static bool                              m_in_boot_mode = false;                        /**< Current protocol mode. */
 static uint16_t                          m_conn_handle = BLE_CONN_HANDLE_INVALID;       /**< Handle of the current connection. */
+static bool m_led_state[3] = {false};                                                   /**< LED State. */
 
 APP_TIMER_DEF(m_battery_timer_id);          
 APP_TIMER_DEF(m_battery_timer_meas_id);                                                  /**< Battery timer. */
@@ -286,8 +287,8 @@ static void battery_level_update(void)
         battery_level = (adc_sample - 500)/1.5;
     else
         battery_level = 0;
-	
-	//battery_level = adc_sample / 10;
+    
+    //battery_level = adc_sample / 10;
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
     if ((err_code != NRF_SUCCESS) &&
@@ -336,21 +337,21 @@ static void battery_level_send_timeout_handler(void * p_context)
 static void keyboard_scan_timeout_handler(void * p_context)
 {
     UNUSED_PARAMETER(p_context);
-	const uint8_t *key_packet;
+    const uint8_t *key_packet;
     uint8_t        key_packet_size;
     if (new_packet(&key_packet, &key_packet_size))
     {
         for(uint_fast8_t i=0; i< key_packet_size; i++)
         {
             if(key_packet[i] == KC_FN15){
-				sleep_mode_enter();
-			}
+                sleep_mode_enter();
+            }
         }	
         if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
         {
             keys_send(key_packet_size,(uint8_t *)&key_packet[0]);
         }
-	}
+    }
 }
 
 
@@ -395,7 +396,7 @@ static void gap_params_init(void)
     uint32_t                err_code;
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
-	
+    
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
@@ -416,14 +417,15 @@ static void gap_params_init(void)
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
-																					
-																						  //下面是添加设置配对密码
-		uint8_t passcode[] = "000000";
-	  //uint8_t *passcode="000000";
+                                                                                    
+        //下面是添加设置配对密码
+        /*																			
+        uint8_t passcode[] = "000000";
     ble_opt_t 	static_option;
-	  static_option.gap_opt.passkey.p_passkey = passcode;
-	  err_code =  sd_ble_opt_set(BLE_GAP_OPT_PASSKEY, &static_option);
-	  APP_ERROR_CHECK(err_code);
+      static_option.gap_opt.passkey.p_passkey = passcode;
+      err_code =  sd_ble_opt_set(BLE_GAP_OPT_PASSKEY, &static_option);
+      APP_ERROR_CHECK(err_code);
+        */
 }
 
 
@@ -524,7 +526,7 @@ static void hids_init(void)
         0x95, 0x06,                 //     Report Count (6)
         0x75, 0x08,                 //     Report Size (8)
         0x15, 0x00,                 //     Logical Minimum (0)
-        0x25, 0x65,                 //     Logical Maximum (101)
+        0x25, 0xFF,                 //     Logical Maximum (255)
         0x05, 0x07,                 //     Usage Page (Key codes)
         0x19, 0x00,                 //     Usage Minimum (0)
         0x29, 0x65,                 //     Usage Maximum (101)
@@ -754,21 +756,21 @@ static void battery_sensor_init(void)
 void ADC_IRQHandler(void)
 {
     nrf_adc_conversion_event_clean();
-		adc_cycle++;
-		adc_sample_temp += nrf_adc_result_get();
-		if(adc_cycle >= 5)
-		{
-			    adc_sample = adc_sample_temp / 5;
-					adc_sample_temp = 0;
-					adc_cycle = 0;
-		}
-		else
-		{
-					nrf_adc_start();
-		}
-		
+        adc_cycle++;
+        adc_sample_temp += nrf_adc_result_get();
+        if(adc_cycle >= 5)
+        {
+                adc_sample = adc_sample_temp / 5;
+                    adc_sample_temp = 0;
+                    adc_cycle = 0;
+        }
+        else
+        {
+                    nrf_adc_start();
+        }
+        
 
-	  
+      
 }
 
 /**@brief Function for handling a Connection Parameters error.
@@ -860,6 +862,7 @@ static uint32_t send_key_scan_press_release(ble_hids_t *   p_hids,
                                             uint16_t *     p_actual_len)
 {
     uint32_t err_code;
+    /**
     uint16_t offset;
     uint16_t data_len;
     uint8_t  data[INPUT_REPORT_KEYS_MAX_LEN];
@@ -870,46 +873,69 @@ static uint32_t send_key_scan_press_release(ble_hids_t *   p_hids,
 
     ASSERT(pattern_len <= (INPUT_REPORT_KEYS_MAX_LEN - 2));
 
-    offset   = pattern_offset;
-    data_len = pattern_len;
+    offset = 0;
 
-    do
+    for(int i=0;i< pattern_len - pattern_offset; i++)
     {
-        // Reset the data buffer. 
-        memset(data, 0, sizeof(data));
-        
-        // Copy the scan code.
-        memcpy(data + SCAN_CODE_POS + offset, p_key_pattern + offset, data_len - offset);
-        
-			/**
-        if (is_shift_key_pressed())
+        if(p_key_pattern[i+pattern_offset]>=KC_LCTL && p_key_pattern[i+pattern_offset]<=KC_RGUI)
         {
-            data[MODIFIER_KEY_POS] |= SHIFT_KEY_CODE;
-        }
-			**/
-        if (!m_in_boot_mode)
-        {
-            err_code = ble_hids_inp_rep_send(p_hids, 
-                                             INPUT_REPORT_KEYS_INDEX,
-                                             INPUT_REPORT_KEYS_MAX_LEN,
-                                             data);
+            data[MODIFIER_KEY_POS] |= 1 << (p_key_pattern[i+pattern_offset] - KC_LCTL);
         }
         else
         {
-            err_code = ble_hids_boot_kb_inp_rep_send(p_hids,
-                                                     INPUT_REPORT_KEYS_MAX_LEN,
-                                                     data);
+            data[SCAN_CODE_POS+offset] = p_key_pattern[i+pattern_offset];
+            offset++;
         }
-        
-        if (err_code != NRF_SUCCESS)
-        {
-            break;
-        }
-        
-        offset++;
-    } while (offset <= data_len);
-
-    *p_actual_len = offset;
+    }
+    
+    if (!m_in_boot_mode)
+    {
+        err_code = ble_hids_inp_rep_send(p_hids, 
+                                            INPUT_REPORT_KEYS_INDEX,
+                                            INPUT_REPORT_KEYS_MAX_LEN,
+                                            data);
+    }
+    else
+    {
+        err_code = ble_hids_boot_kb_inp_rep_send(p_hids,
+                                                    INPUT_REPORT_KEYS_MAX_LEN,
+                                                    data);
+    }
+     *p_actual_len = offset;
+    **/
+		for(int i=0;i< pattern_len; i++)
+		{
+			  switch(p_key_pattern[i])
+				{
+					case KC_NUMLOCK:
+						m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK]=!m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK];
+					  nrf_gpio_pin_toggle(LED_NUM);
+					  break;
+					case KC_CAPSLOCK:
+						m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK]=!m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK];
+					  nrf_gpio_pin_toggle(LED_CAPS);
+					  break;
+					case KC_SCROLLLOCK:
+						m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK]=!m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK];
+					  nrf_gpio_pin_toggle(LED_SCLK);
+					  break;
+					default:
+						break;
+				}
+		}
+    if (!m_in_boot_mode)
+    {
+        err_code = ble_hids_inp_rep_send(&m_hids, 
+                                         INPUT_REPORT_KEYS_INDEX,
+                                         INPUT_REPORT_KEYS_MAX_LEN,
+                                         p_key_pattern);
+    }
+    else
+    {
+        err_code = ble_hids_boot_kb_inp_rep_send(&m_hids,
+                                                 INPUT_REPORT_KEYS_MAX_LEN,
+                                                 p_key_pattern);
+    }
 
     return err_code;
 }
@@ -1087,6 +1113,23 @@ static void keys_send(uint8_t key_pattern_len, uint8_t * p_key_pattern)
     }
 }
 
+void resp_pair_request(){
+    ble_gap_sec_params_t sec_params;
+    uint32_t                    err_code;
+
+    memset(&sec_params,0,sizeof(ble_gap_sec_params_t));
+
+    sec_params.bond = SEC_PARAM_BOND;
+    sec_params.io_caps = SEC_PARAM_IO_CAPABILITIES;
+    sec_params.max_key_size = 16;
+    sec_params.min_key_size = 7;
+    sec_params.oob = SEC_PARAM_OOB;
+    sec_params.mitm = SEC_PARAM_MITM;
+    
+        err_code=sd_ble_gap_sec_params_reply(m_conn_handle,BLE_GAP_SEC_STATUS_SUCCESS,&sec_params,NULL);
+    APP_ERROR_CHECK(err_code);
+
+} 
 
 /**@brief Function for handling the HID Report Characteristic Write event.
  *
@@ -1114,20 +1157,38 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
             APP_ERROR_CHECK(err_code);
 
 
-            if (report_val & OUTPUT_REPORT_BIT_MASK_NUM_LOCK)
+            if (report_val & 1 << OUTPUT_REPORT_BIT_MASK_NUM_LOCK)
+						{
                 nrf_gpio_pin_set(LED_NUM);
+							  m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = true;
+						}
             else
+						{
                 nrf_gpio_pin_clear(LED_NUM);
+							  m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = false;
+						}
 
-            if (report_val & OUTPUT_REPORT_BIT_MASK_CAPS_LOCK)
+            if (report_val & 1 << OUTPUT_REPORT_BIT_MASK_CAPS_LOCK)
+						{
                 nrf_gpio_pin_set(LED_CAPS);
+							  m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK] = true;
+						}
             else
+						{
                 nrf_gpio_pin_clear(LED_CAPS);
+							  m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK] = false;
+						}
 
-            if (report_val & OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK)
+            if (report_val & 1 << OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK)
+						{
                 nrf_gpio_pin_set(LED_SCLK);
+								m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK] = true;
+						}
             else
+						{
                 nrf_gpio_pin_clear(LED_SCLK);
+							  m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK] = false;
+						}
 
                 // The report received is not supported by this application. Do nothing.
             
@@ -1146,11 +1207,13 @@ static void sleep_mode_enter(void)
 
     // Todo: Use custom sleep prepare code.
     // Prepare wakeup buttons.
-		sleep_mode_prepare();
+        sleep_mode_prepare();
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
-		
-		nrf_gpio_pin_clear(LED_SCLK);
+        
+    nrf_gpio_pin_clear(LED_SCLK);
+		nrf_gpio_pin_clear(LED_NUM);
+		nrf_gpio_pin_clear(LED_CAPS);
 
     err_code = sd_power_system_off();
     APP_ERROR_CHECK(err_code);
@@ -1343,7 +1406,18 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     {
         case BLE_GAP_EVT_CONNECTED:
             m_conn_handle      = p_ble_evt->evt.gap_evt.conn_handle;
-            break;
+                    err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
+            APP_ERROR_CHECK(err_code);
+            m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+
+           // 1连接一建立就发送安全请求，从而促使手机发送配对请求过来
+                        /**
+           ble_gap_sec_params_t params;
+           params.bond = SEC_PARAM_BOND;
+           params.mitm = SEC_PARAM_MITM;
+           sd_ble_gap_authenticate(m_conn_handle, &params);
+                **/
+           break;
 
         case BLE_EVT_TX_COMPLETE:
             // Send next key event
@@ -1391,7 +1465,37 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
                 }
             }
             break;
+                        /**
+                        case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
+                                nrf_gpio_pin_toggle(LED_CAPS);
+                                printf("receive pair request\n");
+                                resp_pair_request();
+                        break; 
+                        case BLE_GAP_EVT_AUTH_STATUS:
+                if(p_ble_evt->evt.gap_evt.params.auth_status.auth_status == BLE_GAP_SEC_STATUS_SUCCESS)
+                                {
+                    printf("pair success\r\n");
+                }
+                                else
+                                {
+                    sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+                } 
+                        break;
+                        **/
+                        /*
+                        case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
+                                err_code=sd_ble_gap_sec_params_reply(m_conn_handle,
+                                                                                                        BLE_GAP_SEC_STATUS_SUCCESS,&register_param.sec_param,NULL);
+                                APP_ERROR_CHECK(err_code);
+                        break;
 
+
+                        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+                                err_code=sd_ble_gatts_sys_attr_set(m_conn_handle,
+                                                  NULL, 0, 0);
+                APP_ERROR_CHECK(err_code);
+            break; 
+                    */
         case BLE_GATTC_EVT_TIMEOUT:
         case BLE_GATTS_EVT_TIMEOUT:
             // Disconnect on GATT Server and Client timeout events.
@@ -1404,6 +1508,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             // No implementation needed.
             break;
     }
+        //nrf_gpio_pin_toggle(LED_NUM);
 }
 
 
@@ -1551,6 +1656,7 @@ static void device_manager_init(bool erase_bonds)
     dm_init_param_t        init_param = {.clear_persistent_data = erase_bonds};
     dm_application_param_t  register_param;
 
+
     // Initialize peer device handle.
     err_code = dm_handle_initialize(&m_bonded_peer_handle);
     APP_ERROR_CHECK(err_code);
@@ -1590,9 +1696,9 @@ static void buttons_leds_init(void)
     nrf_gpio_cfg_output(LED_NUM);
     nrf_gpio_cfg_output(LED_CAPS);
     nrf_gpio_cfg_output(LED_SCLK);
-	
-			
-	  nrf_gpio_pin_set(LED_SCLK);
+    
+            
+      nrf_gpio_pin_set(LED_SCLK);
 
 }
 
@@ -1626,9 +1732,9 @@ int main(void)
     conn_params_init();
     buffer_init();
 
-	
+    
 
-	
+    
     // Start execution.
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
