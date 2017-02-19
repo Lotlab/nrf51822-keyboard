@@ -45,7 +45,6 @@
 #include "ble_dis.h"
 #include "ble_conn_params.h"
 #include "bsp.h"
-// #include "sensorsim.h"
 #include "bsp_btn_ble.h"
 #include "app_scheduler.h"
 #include "softdevice_handler_appsh.h"
@@ -99,7 +98,7 @@
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                                            /**< Number of attempts before giving up the connection parameter negotiation. */
 
 #define SEC_PARAM_BOND 1                               /**< Perform bonding. */
-#define SEC_PARAM_MITM 0                               /**< Man In The Middle protection not required. */
+#define SEC_PARAM_MITM 1                               /**< Man In The Middle protection not required. */
 #define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_NONE /**< No I/O capabilities. */
 #define SEC_PARAM_OOB 0                                /**< Out Of Band data not available. */
 #define SEC_PARAM_MIN_KEY_SIZE 7                       /**< Minimum encryption key size. */
@@ -215,10 +214,11 @@ APP_TIMER_DEF(m_keyboard_scan_timer_id);
 static dm_application_instance_t m_app_handle; /**< Application identifier allocated by device manager. */
 static dm_handle_t m_bonded_peer_handle;       /**< Device reference handle to the current bonded central. */
 
-static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}};
-
 #ifdef BLE_DFU_APP_SUPPORT
+static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}};
 static ble_dfu_t m_dfus; /**< Structure used to identify the DFU service. */
+#else
+static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}};
 #endif                   // BLE_DFU_APP_SUPPORT
 
 /** List to enqueue not just data to be sent, but also related information like the handle, connection handle etc */
@@ -409,12 +409,12 @@ static void gap_params_init(void)
 
     //下面是添加设置配对密码
     /*																			
-        uint8_t passcode[] = "000000";
+    uint8_t passcode[] = "000000";
     ble_opt_t 	static_option;
-      static_option.gap_opt.passkey.p_passkey = passcode;
-      err_code =  sd_ble_opt_set(BLE_GAP_OPT_PASSKEY, &static_option);
-      APP_ERROR_CHECK(err_code);
-        */
+    static_option.gap_opt.passkey.p_passkey = passcode;
+    err_code =  sd_ble_opt_set(BLE_GAP_OPT_PASSKEY, &static_option);
+    APP_ERROR_CHECK(err_code);
+    */
 }
 
 /**@brief Function for initializing Device Information Service.

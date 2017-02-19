@@ -48,12 +48,12 @@
 #include "pstorage_platform.h"
 #include "nrf_mbr.h"
 
-#define LED_NUM 23
-#define LED_CAPS 24
-#define LED_SCLK 25
+#define LED_NUM 11
+#define LED_CAPS 12
+#define LED_SCLK 13
 
-#define BOOTLOADER_BTN_OPT 19
-#define BOOTLOADER_BTN_IPT 7
+#define BOOTLOADER_BTN_OPT 21
+#define BOOTLOADER_BTN_IPT 3
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 1                                                       /**< Include the service_changed characteristic. For DFU this should normally be the case. */
 
@@ -108,9 +108,8 @@ static void timers_init(void)
  */
 static void buttons_init(void)
 {
-    nrf_gpio_cfg_sense_input(BOOTLOADER_BUTTON,
-                             NRF_GPIO_PIN_PULLDOWN, 
-                             NRF_GPIO_PIN_SENSE_HIGH);
+    nrf_gpio_cfg_input(BOOTLOADER_BUTTON,
+                             NRF_GPIO_PIN_PULLDOWN);
     nrf_gpio_cfg_output(BOOTLOADER_BTN_OPT);                        
     nrf_gpio_pin_set(BOOTLOADER_BTN_OPT);
 }
