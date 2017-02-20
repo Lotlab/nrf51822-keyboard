@@ -3,9 +3,8 @@
 /config/ble_app_hids_keyboard_s110_spi_pca10028
 /config/ble_app_hids_keyboard_s130_pca10028
 /config/ble_app_hids_keyboard_s130_spi_pca10028
-/pca10028/s110/armgcc/_build
+_build
 /pca10028/s110/arm4
-/pca10028/s110/arm5_no_packs
 /pca10028/s110/iar
 /pca10028/s130
 /pca10028/ser_s110_spi
