@@ -67,8 +67,8 @@
 #define UART_TX_BUF_SIZE 256 /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE 1   /**< UART RX buffer size. */
 
-#define DEVICE_NAME "Nordic_Keyboard"           /**< Name of device. Will be included in the advertising data. */
-#define MANUFACTURER_NAME "NordicSemiconductor" /**< Manufacturer. Will be passed to Device Information Service. */
+#define DEVICE_NAME "BLE4100"           /**< Name of device. Will be included in the advertising data. */
+#define MANUFACTURER_NAME "Lotlab" /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define APP_TIMER_PRESCALER 0     /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE 4 /**< Size of timer operation queues. */
@@ -388,7 +388,6 @@ static void gap_params_init(void)
     ble_gap_conn_sec_mode_t sec_mode;
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
-
     err_code = sd_ble_gap_device_name_set(&sec_mode,
                                           (const uint8_t *)DEVICE_NAME,
                                           strlen(DEVICE_NAME));
