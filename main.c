@@ -134,7 +134,7 @@
 
 #ifdef BLE_DFU_APP_SUPPORT
 #define DFU_REV_MAJOR 0x00                                  /** DFU Major revision number to be exposed. */
-#define DFU_REV_MINOR 0x01                                  /** DFU Minor revision number to be exposed. */
+#define DFU_REV_MINOR 0x00                                  /** DFU Minor revision number to be exposed. */
 #define DFU_REVISION ((DFU_REV_MAJOR << 8) | DFU_REV_MINOR) /** DFU Revision number to be exposed. Combined of major and minor versions. */
 #define APP_SERVICE_HANDLE_START 0x000C                     /**< Handle of first application specific service when when service changed characteristic is present. */
 #define BLE_HANDLE_MAX 0xFFFF                               /**< Max handle value in BLE. */

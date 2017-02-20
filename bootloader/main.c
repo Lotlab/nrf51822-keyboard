@@ -52,8 +52,8 @@
 #define LED_CAPS 12
 #define LED_SCLK 13
 
-#define BOOTLOADER_BTN_OPT 21
-#define BOOTLOADER_BTN_IPT 3
+#define BOOTLOADER_BTN_OPT 28
+#define BOOTLOADER_BTN_IPT 21
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 1                                                       /**< Include the service_changed characteristic. For DFU this should normally be the case. */
 
@@ -189,8 +189,6 @@ int main(void)
     {
         NRF_POWER->GPREGRET = 0;
     }
-    
-    leds_init();
 
     // This check ensures that the defined fields in the bootloader corresponds with actual
     // setting in the nRF51 chip.
@@ -200,6 +198,7 @@ int main(void)
     // Initialize.
     timers_init();
     buttons_init();
+		leds_init();
 
     (void)bootloader_init();
 
@@ -226,7 +225,7 @@ int main(void)
     }
 
     dfu_start  = app_reset;
-    dfu_start |= ((nrf_gpio_pin_read(BOOTLOADER_BUTTON) == 1) ? true: false);
+    dfu_start |= (nrf_gpio_pin_read(BOOTLOADER_BUTTON) == 1);
     
     if (dfu_start || (!bootloader_app_is_valid(DFU_BANK_0_REGION_START)))
     {
