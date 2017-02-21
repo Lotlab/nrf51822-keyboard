@@ -1,1 +1,1 @@
-Keil license is required in order to build serialization example (code exceeds 32k limit). GCC makefile provided.
+下载nrf SDK 10.0后将本文件夹放到examples/ble_peripheral中
