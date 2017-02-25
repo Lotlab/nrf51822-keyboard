@@ -132,7 +132,7 @@ static void matrix_to_keycode(uint16_t *matrix, uint8_t *pressed_keys, uint8_t *
     for (uint_fast8_t i = 0; i < count; i++) // 替换按键
     {
         uint_fast8_t keycode;
-        if (fn && (press_normal[i] != KC_NO))
+        if (fn && (press_fn[i] != KC_TRANSPARENT))
         {
             keycode = press_fn[i];
         }

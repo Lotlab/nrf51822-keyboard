@@ -24,12 +24,12 @@ static const uint8_t keymaps[2][MATRIX_COLS][MATRIX_ROWS] = {
            LCTL,FN0,LALT, GRV,         SPC,          RALT,  INS,   DEL, LEFT, DOWN, RIGHT ),
     /* 1: Fn */       
     KEYMAP( \
-           NO,F11, F12,  NO,  NO,  NO,  NO,  NO,  NO,  NO,   NO,    NO,   NO,   NO, FN15, \
-               NO,  NO,  NO,  NO,  NO,  NO,  P7,  P8,  P9, PAST,    NO,   NO,   NO,   NO, \
-           NO, NO,  NO,  NO,  NO,  NO,  NO,  P4,  P5,  P6, PMNS,    NO,   NO,   NO,   NO, \
-           NO, NO,  NO,  NO,  NO,  NO,  NO,  P1,  P2,  P3, PPLS,    NO,     PENT,     NO, \
-           NO,   NO,  NO,  NO,  NO,  NO,  NO,  P0,     NO, PDOT,  PSLS,   NO,   NO,   NO, \
-           RCTL,FN0,  NO,  NO,         NO,             NO,   NO,   NO,    NO,   NO,   NO ),       
+         TRNS, F11, F12,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS, TRNS,  TRNS, TRNS, TRNS, FN15, \
+              TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P7,  P8,  P9, PAST,  TRNS, TRNS, TRNS, TRNS, \
+         TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P4,  P5,  P6, PMNS,  TRNS, TRNS, TRNS, TRNS, \
+         TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P1,  P2,  P3, PPLS,  TRNS,     PENT,   TRNS, \
+         TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P0,   TRNS, PDOT,  PSLS,  TRNS, TRNS, TRNS, \
+         RCTL,FN0, LGUI,TRNS,       TRNS,           TRNS, TRNS,  TRNS,  TRNS, TRNS, TRNS ),       
 };
 
 #endif
