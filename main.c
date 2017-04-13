@@ -56,6 +56,7 @@
 #include "app_trace.h"
 #include "keyboard_driver.h"
 #include "keycode.h"
+#include "keymap.h"
 
 #ifdef BLE_DFU_APP_SUPPORT
 #include "ble_dfu.h"
@@ -1655,14 +1656,21 @@ static void power_manage(void)
 int main(void)
 {
     uint32_t err_code;
-
+    _Bool erase_bond = false;
+    
     // Initialize.
     app_trace_init();
     timers_init();
     buttons_leds_init();
     ble_stack_init();
     scheduler_init();
-    device_manager_init(true);
+    
+        
+    nrf_gpio_pin_set(row_pin_array[1]);
+    erase_bond = nrf_gpio_pin_read(column_pin_array[1]);
+    nrf_gpio_pin_clear(row_pin_array[1]);
+    
+    device_manager_init(erase_bond);
     gap_params_init();
     advertising_init();
     services_init();
