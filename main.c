@@ -100,7 +100,7 @@
 
 #define SEC_PARAM_BOND 1                               /**< Perform bonding. */
 #define SEC_PARAM_MITM 1                               /**< Man In The Middle protection not required. */
-#define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_NONE /**< No I/O capabilities. */
+#define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_KEYBOARD_ONLY /**< No I/O capabilities. */
 #define SEC_PARAM_OOB 0                                /**< Out Of Band data not available. */
 #define SEC_PARAM_MIN_KEY_SIZE 7                       /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE 16                      /**< Maximum encryption key size. */
@@ -233,6 +233,10 @@ int8_t adc_cycle = 0;
 static void sleep_mode_enter(void);
 static void keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern);
 
+uint8_t passkey_enter_index = 0xFF;
+uint8_t passkey_entered[6];
+uint16_t passkey_conn_handle;
+
 /**@brief Callback function for asserts in the SoftDevice.
  *
  * @details This function will be called in case of an assert in the SoftDevice.
@@ -339,6 +343,60 @@ static void keyboard_scan_timeout_handler(void *p_context)
             {
                 sleep_mode_enter();
             }
+        }
+        if(passkey_enter_index < 6)
+        {
+            for(uint_fast8_t i = 0;i < key_packet_size; i++)
+            {
+                switch(key_packet[i])
+                {
+                    case KC_1:
+                    case KC_KP_1:
+                        passkey_entered[passkey_enter_index++] = '1';
+                        break;
+                    case KC_2:
+                    case KC_KP_2:
+                        passkey_entered[passkey_enter_index++] = '2';
+                        break;
+                    case KC_3:
+                    case KC_KP_3:
+                        passkey_entered[passkey_enter_index++] = '3';
+                        break;
+                    case KC_4:
+                    case KC_KP_4:
+                        passkey_entered[passkey_enter_index++] = '4';
+                        break;
+                    case KC_5:
+                    case KC_KP_5:
+                        passkey_entered[passkey_enter_index++] = '5';
+                        break;
+                    case KC_6:
+                    case KC_KP_6:
+                        passkey_entered[passkey_enter_index++] = '6';
+                        break;
+                    case KC_7:
+                    case KC_KP_7:
+                        passkey_entered[passkey_enter_index++] = '7';
+                        break;
+                    case KC_8:
+                    case KC_KP_8:
+                        passkey_entered[passkey_enter_index++] = '8';
+                        break;
+                    case KC_9:
+                    case KC_KP_9:
+                        passkey_entered[passkey_enter_index++] = '9';
+                        break;
+                    case KC_0:
+                    case KC_KP_0:
+                        passkey_entered[passkey_enter_index++] = '0';
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if(passkey_enter_index == 6)
+                 sd_ble_gap_auth_key_reply(passkey_conn_handle,BLE_GAP_AUTH_KEY_TYPE_PASSKEY ,passkey_entered); 
+            return;
         }
         if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
         {
@@ -512,7 +570,7 @@ static void hids_init(void)
             0x95, 0x06, //     Report Count (6)
             0x75, 0x08, //     Report Size (8)
             0x15, 0x00, //     Logical Minimum (0)
-            0x25, 0xFF, //     Logical Maximum (255)
+            0x25, 0x65, //     Logical Maximum (255)
             0x05, 0x07, //     Usage Page (Key codes)
             0x19, 0x00, //     Usage Minimum (0)
             0x29, 0x65, //     Usage Maximum (101)
@@ -1090,24 +1148,6 @@ static void keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
     }
 }
 
-void resp_pair_request()
-{
-    ble_gap_sec_params_t sec_params;
-    uint32_t err_code;
-
-    memset(&sec_params, 0, sizeof(ble_gap_sec_params_t));
-
-    sec_params.bond = SEC_PARAM_BOND;
-    sec_params.io_caps = SEC_PARAM_IO_CAPABILITIES;
-    sec_params.max_key_size = 16;
-    sec_params.min_key_size = 7;
-    sec_params.oob = SEC_PARAM_OOB;
-    sec_params.mitm = SEC_PARAM_MITM;
-
-    err_code = sd_ble_gap_sec_params_reply(m_conn_handle, BLE_GAP_SEC_STATUS_SUCCESS, &sec_params, NULL);
-    APP_ERROR_CHECK(err_code);
-}
-
 /**@brief Function for handling the HID Report Characteristic Write event.
  *
  * @param[in]   p_evt   HID service event.
@@ -1422,35 +1462,12 @@ static void on_ble_evt(ble_evt_t *p_ble_evt)
             }
         }
         break;
-    /*
-    case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
-        nrf_gpio_pin_toggle(LED_CAPS);
-        printf("receive pair request\n");
-        resp_pair_request();
-        break;
-    case BLE_GAP_EVT_AUTH_STATUS:
-        if (p_ble_evt->evt.gap_evt.params.auth_status.auth_status == BLE_GAP_SEC_STATUS_SUCCESS)
-        {
-            printf("pair success\r\n");
-        }
-        else
-        {
-            sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-        }
+
+    case BLE_GAP_EVT_AUTH_KEY_REQUEST:
+        passkey_enter_index = 0;
+        passkey_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
         break;
 
-    case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
-        err_code = sd_ble_gap_sec_params_reply(m_conn_handle,
-                                               BLE_GAP_SEC_STATUS_SUCCESS, &register_param.sec_param, NULL);
-        APP_ERROR_CHECK(err_code);
-        break;
-
-    case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-        err_code = sd_ble_gatts_sys_attr_set(m_conn_handle,
-                                             NULL, 0, 0);
-        APP_ERROR_CHECK(err_code);
-        break;
-*/
     case BLE_GATTC_EVT_TIMEOUT:
     case BLE_GATTS_EVT_TIMEOUT:
         // Disconnect on GATT Server and Client timeout events.
@@ -1575,7 +1592,7 @@ static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
                                            ret_code_t event_result)
 {
     APP_ERROR_CHECK(event_result);
-
+    uint32_t err_code;
     switch (p_event->event_id)
     {
     case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
@@ -1587,6 +1604,12 @@ static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
         app_context_load(p_handle);
         break;
 #endif // BLE_DFU_APP_SUPPORT
+        case BLE_GAP_SEC_STATUS_PASSKEY_ENTRY_FAILED: //handle passkey pairing fail event
+        {
+            err_code = sd_ble_gap_disconnect(m_conn_handle , BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+            APP_ERROR_CHECK(err_code);
+            return NRF_SUCCESS;
+    }
     }
 
     return NRF_SUCCESS;

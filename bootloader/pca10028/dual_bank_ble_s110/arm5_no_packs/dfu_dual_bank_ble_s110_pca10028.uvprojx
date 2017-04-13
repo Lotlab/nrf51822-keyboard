@@ -15,8 +15,8 @@
         <TargetCommonOption>
           <Device>nRF51422_xxAC</Device>
           <Vendor>Nordic Semiconductor</Vendor>
-          <PackID>NordicSemiconductor.nRF_DeviceFamilyPack.8.11.1</PackID>
-          <PackURL>http://developer.nordicsemi.com/nRF5_SDK/pieces/nRF_DeviceFamilyPack/</PackURL>
+          <PackID>NordicSemiconductor.nRF_DeviceFamilyPack.8.2.0</PackID>
+          <PackURL>http://developer.nordicsemi.com/nRF51_SDK/pieces/nRF_DeviceFamilyPack/</PackURL>
           <Cpu>IROM(0x0003C000,0x3C00) IRAM(0x20002000,0x6000) CPUTYPE("Cortex-M0") CLOCK(16000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -298,11 +298,11 @@
               <OCR_RVCT9>
                 <Type>0</Type>
                 <StartAddress>0x20002c00</StartAddress>
-                <Size>0x1380</Size>
+                <Size>0x5380</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
-                <StartAddress>0x20003f80</StartAddress>
+                <StartAddress>0x20007f80</StartAddress>
                 <Size>0x80</Size>
               </OCR_RVCT10>
             </OnChipMemories>
