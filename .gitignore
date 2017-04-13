@@ -14,3 +14,15 @@ _build
 *.hex
 *.bin
 *.map
+/pca10028/s110/arm5_no_packs/EventRecorderStub.scvd
+/pca10028/s110/arm5_no_packs/JLinkLog.txt
+/pca10028/s110/arm5_no_packs/JLinkSettings.ini
+/pca10028/s110/arm5_no_packs/nrf51422_xxac_s110.BAT
+/bootloader/pca10028/dual_bank_ble_s110/arm5_no_packs/EventRecorderStub.scvd
+/bootloader/pca10028/dual_bank_ble_s110/arm5_no_packs/JLinkLog.txt
+/bootloader/pca10028/dual_bank_ble_s110/arm5_no_packs/JLinkSettings.ini
+/bootloader/pca10028/dual_bank_ble_s110/arm5_no_packs/dfu_dual_bank_ble_s110_pca10028.uvguix.jiang
+/keymap.h~RF4a8efe8.TMP
+/pca10028/s110/arm5_no_packs/ble_app_hids_keyboard_s110_pca10028.uvguix
+/pca10028/s110/arm5_no_packs/ble_app_hids_keyboard_s110_pca10028.uvguix.jiang
+/pca10028/s110/arm5_no_packs/ble_app_hids_keyboard_s110_pca10028.uvoptx
