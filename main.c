@@ -1688,7 +1688,6 @@ int main(void)
     ble_stack_init();
     scheduler_init();
     
-        
     nrf_gpio_pin_set(row_pin_array[1]);
     erase_bond = nrf_gpio_pin_read(column_pin_array[1]);
     nrf_gpio_pin_clear(row_pin_array[1]);
