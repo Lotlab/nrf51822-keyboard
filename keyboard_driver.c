@@ -21,6 +21,7 @@
 
 #define MODIFIER_HID_START 0xE0
 #define MODIFIER_HID_END 0xE7
+
 static uint8_t m_currently_pressed_keys[CHERRY8x16_MAX_NUM_OF_PRESSED_KEYS]; //!< Array holding currently pressed keys. Filled up from index 0. Values are
 static uint8_t m_transmitted_keys[CHERRY8x16_MAX_NUM_OF_PRESSED_KEYS];       //!< Array holding the keys that have already been transmitted.
 static uint8_t m_num_of_currently_pressed_keys;                              //!< Number of keys in m_currently_pressed_keys
@@ -299,7 +300,7 @@ static void cherry8x16_keypacket_create(uint8_t *key_packet, uint8_t key_packet_
         }
     }
 
-    // Detect if Fn is pressed, detect modifier keys, and add rest of the keys to the packet
+    // detect modifier keys, and add rest of the keys to the packet
     for (uint_fast8_t i = 0; i < m_num_of_currently_pressed_keys; i++)
     {
         // Modifier HID usage codes are from 0xE0 to 0xE7

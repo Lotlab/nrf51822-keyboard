@@ -26,22 +26,19 @@
  * Also it would accept pairing requests from any peer device.
  */
 
-#include <stdint.h>
+#include "main.h"
 #include <string.h>
 #include "nordic_common.h"
 #include "nrf.h"
-#include "keyboard_conf.h"
 #include "nrf_assert.h"
 #include "app_error.h"
 #include "nrf_gpio.h"
-#include "nrf_adc.h"
 #include "ble.h"
 #include "ble_hci.h"
 #include "ble_srv_common.h"
 #include "ble_advertising.h"
 #include "ble_advdata.h"
 #include "ble_hids.h"
-#include "ble_bas.h"
 #include "ble_dis.h"
 #include "ble_conn_params.h"
 #include "bsp.h"
@@ -54,9 +51,11 @@
 #include "pstorage.h"
 #include "nrf_delay.h"
 #include "app_trace.h"
+
 #include "keyboard_driver.h"
 #include "keycode.h"
 #include "keymap.h"
+#include "battery_service.h"
 
 #ifdef BLE_DFU_APP_SUPPORT
 #include "ble_dfu.h"
@@ -68,15 +67,8 @@
 #define UART_TX_BUF_SIZE 256 /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE 1   /**< UART RX buffer size. */
 
-#define DEVICE_NAME "BLE4100"           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME "BLE4100"      /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME "Lotlab" /**< Manufacturer. Will be passed to Device Information Service. */
-
-#define APP_TIMER_PRESCALER 0     /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_OP_QUEUE_SIZE 4 /**< Size of timer operation queues. */
-
-#define BATTERY_LEVEL_MEAS_INTERVAL APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER) /**< Battery level measurement interval (ticks). */
-#define BATTERY_LEVEL_SEND_INTERVAL APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)  /**< Battert level report interval (ticks). */
-#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(25, APP_TIMER_PRESCALER)         /**< Keyboard scan interval (ticks). */
 
 #define PNP_ID_VENDOR_ID_SOURCE 0x02  /**< Vendor ID Source. */
 #define PNP_ID_VENDOR_ID 0x1915       /**< Vendor ID. */
@@ -88,22 +80,30 @@
 #define APP_ADV_FAST_TIMEOUT 30      /**< The duration of the fast advertising period (in seconds). */
 #define APP_ADV_SLOW_TIMEOUT 180     /**< The duration of the slow advertising period (in seconds). */
 
+#define SLEEP_DEVIDE 10
+#define SLEEP_SLOW_TIMEOUT 60 // 60秒后转入慢速扫描模式
+#define SLEEP_OFF_TIMEOUT 600 // 10分钟之后自动关机
+
+#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(25, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(100, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
+#define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000 * SLEEP_DEVIDE, APP_TIMER_PRESCALER) /**< Keyboard sleep interval. */
+
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
-#define MIN_CONN_INTERVAL MSEC_TO_UNITS(7.5, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
-#define MAX_CONN_INTERVAL MSEC_TO_UNITS(30, UNIT_1_25_MS)  /**< Maximum connection interval (30 ms). */
-#define SLAVE_LATENCY 6                                    /**< Slave latency. */
-#define CONN_SUP_TIMEOUT MSEC_TO_UNITS(430, UNIT_10_MS)    /**< Connection supervisory timeout (430 ms). */
+#define MIN_CONN_INTERVAL MSEC_TO_UNITS(12.5, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
+#define MAX_CONN_INTERVAL MSEC_TO_UNITS(60, UNIT_1_25_MS)   /**< Maximum connection interval (30 ms). */
+#define SLAVE_LATENCY 6                                     /**< Slave latency. */
+#define CONN_SUP_TIMEOUT MSEC_TO_UNITS(850, UNIT_10_MS)     /**< Connection supervisory timeout (430 ms). */
 
 #define FIRST_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                                            /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define SEC_PARAM_BOND 1                               /**< Perform bonding. */
-#define SEC_PARAM_MITM 1                               /**< Man In The Middle protection not required. */
+#define SEC_PARAM_BOND 1                                        /**< Perform bonding. */
+#define SEC_PARAM_MITM 1                                        /**< Man In The Middle protection not required. */
 #define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_KEYBOARD_ONLY /**< No I/O capabilities. */
-#define SEC_PARAM_OOB 0                                /**< Out Of Band data not available. */
-#define SEC_PARAM_MIN_KEY_SIZE 7                       /**< Minimum encryption key size. */
-#define SEC_PARAM_MAX_KEY_SIZE 16                      /**< Maximum encryption key size. */
+#define SEC_PARAM_OOB 0                                         /**< Out Of Band data not available. */
+#define SEC_PARAM_MIN_KEY_SIZE 7                                /**< Minimum encryption key size. */
+#define SEC_PARAM_MAX_KEY_SIZE 16                               /**< Maximum encryption key size. */
 
 #define OUTPUT_REPORT_INDEX 0                   /**< Index of Output Report. */
 #define OUTPUT_REPORT_MAX_LEN 1                 /**< Maximum length of Output Report. */
@@ -203,14 +203,12 @@ typedef struct
 STATIC_ASSERT(sizeof(buffer_list_t) % 4 == 0);
 
 static ble_hids_t m_hids;                                /**< Structure used to identify the HID service. */
-static ble_bas_t m_bas;                                  /**< Structure used to identify the battery service. */
 static bool m_in_boot_mode = false;                      /**< Current protocol mode. */
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
 static bool m_led_state[3] = {false};                    /**< LED State. */
 
-APP_TIMER_DEF(m_battery_timer_id);
-APP_TIMER_DEF(m_battery_timer_meas_id); /**< Battery timer. */
 APP_TIMER_DEF(m_keyboard_scan_timer_id);
+APP_TIMER_DEF(m_keyboard_sleep_timer_id);
 
 static dm_application_instance_t m_app_handle; /**< Application identifier allocated by device manager. */
 static dm_handle_t m_bonded_peer_handle;       /**< Device reference handle to the current bonded central. */
@@ -220,22 +218,21 @@ static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE
 static ble_dfu_t m_dfus; /**< Structure used to identify the DFU service. */
 #else
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}};
-#endif                   // BLE_DFU_APP_SUPPORT
+#endif // BLE_DFU_APP_SUPPORT
 
 /** List to enqueue not just data to be sent, but also related information like the handle, connection handle etc */
 static buffer_list_t buffer_list;
 
 static void on_hids_evt(ble_hids_t *p_hids, ble_hids_evt_t *p_evt);
 
-volatile int32_t adc_sample, adc_sample_temp;
-int8_t adc_cycle = 0;
-
 static void sleep_mode_enter(void);
 static void keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern);
 
-uint8_t passkey_enter_index = 0xFF;
-uint8_t passkey_entered[6];
-uint16_t passkey_conn_handle;
+static uint8_t passkey_enter_index = 0xFF;
+static uint8_t passkey_entered[6];
+static uint16_t passkey_conn_handle;
+
+static uint16_t sleep_counter = 0;
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -274,137 +271,8 @@ static void ble_advertising_error_handler(uint32_t nrf_error)
     APP_ERROR_HANDLER(nrf_error);
 }
 
-/**@brief 上传电量数据
- */
-static void battery_level_update(void)
-{
-    uint32_t err_code;
-    uint8_t battery_level;
-
-    // TODO: do some measure here!
-    if (adc_sample > 500 && adc_sample < 650)
-        battery_level = (adc_sample - 500) / 1.5;
-    else
-        battery_level = 0;
-
-    //battery_level = adc_sample / 10;
-
-    err_code = ble_bas_battery_level_update(&m_bas, battery_level);
-    if ((err_code != NRF_SUCCESS) &&
-        (err_code != NRF_ERROR_INVALID_STATE) &&
-        (err_code != BLE_ERROR_NO_TX_BUFFERS) &&
-        (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING))
-    {
-        APP_ERROR_HANDLER(err_code);
-    }
-}
-
-/**@brief 电量测量计时器溢出处理函数
- *
- * @details 当电量状态需要测量时调用此函数
- *
- * @param[in]   p_context   Pointer used for passing some arbitrary information (context) from the
- *                          app_start_timer() call to the timeout handler.
- */
-static void battery_level_meas_timeout_handler(void *p_context)
-{
-    UNUSED_PARAMETER(p_context);
-    nrf_adc_start();
-}
-
-/**@brief 电量上报计时器溢出处理函数
- *
- * @details 当电量状态需要上报时调用此函数
- *
- * @param[in]   p_context   Pointer used for passing some arbitrary information (context) from the
- *                          app_start_timer() call to the timeout handler.
- */
-static void battery_level_send_timeout_handler(void *p_context)
-{
-    UNUSED_PARAMETER(p_context);
-    battery_level_update();
-}
-
-/**@brief Function for handling the keyboard scan timer timeout.
- *
- * @details This function will be called each time the keyboard scan timer expires.
- *
- */
-static void keyboard_scan_timeout_handler(void *p_context)
-{
-    UNUSED_PARAMETER(p_context);
-    const uint8_t *key_packet;
-    uint8_t key_packet_size;
-    if (new_packet(&key_packet, &key_packet_size))
-    {
-        for (uint_fast8_t i = 0; i < key_packet_size; i++)
-        {
-            if (key_packet[i] == KC_FN15)
-            {
-                sleep_mode_enter();
-            }
-        }
-        if(passkey_enter_index < 6)
-        {
-            for(uint_fast8_t i = 0;i < key_packet_size; i++)
-            {
-                switch(key_packet[i])
-                {
-                    case KC_1:
-                    case KC_KP_1:
-                        passkey_entered[passkey_enter_index++] = '1';
-                        break;
-                    case KC_2:
-                    case KC_KP_2:
-                        passkey_entered[passkey_enter_index++] = '2';
-                        break;
-                    case KC_3:
-                    case KC_KP_3:
-                        passkey_entered[passkey_enter_index++] = '3';
-                        break;
-                    case KC_4:
-                    case KC_KP_4:
-                        passkey_entered[passkey_enter_index++] = '4';
-                        break;
-                    case KC_5:
-                    case KC_KP_5:
-                        passkey_entered[passkey_enter_index++] = '5';
-                        break;
-                    case KC_6:
-                    case KC_KP_6:
-                        passkey_entered[passkey_enter_index++] = '6';
-                        break;
-                    case KC_7:
-                    case KC_KP_7:
-                        passkey_entered[passkey_enter_index++] = '7';
-                        break;
-                    case KC_8:
-                    case KC_KP_8:
-                        passkey_entered[passkey_enter_index++] = '8';
-                        break;
-                    case KC_9:
-                    case KC_KP_9:
-                        passkey_entered[passkey_enter_index++] = '9';
-                        break;
-                    case KC_0:
-                    case KC_KP_0:
-                        passkey_entered[passkey_enter_index++] = '0';
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if(passkey_enter_index == 6)
-                 sd_ble_gap_auth_key_reply(passkey_conn_handle,BLE_GAP_AUTH_KEY_TYPE_PASSKEY ,passkey_entered); 
-            return;
-        }
-        if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
-        {
-            keys_send(key_packet_size, (uint8_t *)&key_packet[0]);
-        }
-    }
-}
-
+static void keyboard_scan_timeout_handler(void *p_context);
+static void keyboard_sleep_timeout_handler(void *p_context);
 /**@brief 计时器初始化函数
  *
  * @details Initializes the timer module.
@@ -416,21 +284,15 @@ static void timers_init(void)
     // Initialize timer module, making it use the scheduler.
     APP_TIMER_APPSH_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, true);
 
-    // Create battery timer.
-    err_code = app_timer_create(&m_battery_timer_id,
-                                APP_TIMER_MODE_REPEATED,
-                                battery_level_send_timeout_handler);
-
-    APP_ERROR_CHECK(err_code);
-    err_code = app_timer_create(&m_battery_timer_meas_id,
-                                APP_TIMER_MODE_REPEATED,
-                                battery_level_meas_timeout_handler);
-
-    APP_ERROR_CHECK(err_code);
-
     err_code = app_timer_create(&m_keyboard_scan_timer_id,
                                 APP_TIMER_MODE_REPEATED,
                                 keyboard_scan_timeout_handler);
+
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_create(&m_keyboard_sleep_timer_id,
+                                APP_TIMER_MODE_REPEATED,
+                                keyboard_sleep_timeout_handler);
 
     APP_ERROR_CHECK(err_code);
 }
@@ -465,14 +327,8 @@ static void gap_params_init(void)
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
 
-    //下面是添加设置配对密码
-    /*																			
-    uint8_t passcode[] = "000000";
-    ble_opt_t 	static_option;
-    static_option.gap_opt.passkey.p_passkey = passcode;
-    err_code =  sd_ble_opt_set(BLE_GAP_OPT_PASSKEY, &static_option);
+    err_code = sd_ble_gap_tx_power_set(-4);
     APP_ERROR_CHECK(err_code);
-    */
 }
 
 /**@brief Function for initializing Device Information Service.
@@ -497,30 +353,6 @@ static void dis_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&dis_init_obj.dis_attr_md.write_perm);
 
     err_code = ble_dis_init(&dis_init_obj);
-    APP_ERROR_CHECK(err_code);
-}
-
-/**@brief Function for initializing Battery Service.
- */
-static void bas_init(void)
-{
-    uint32_t err_code;
-    ble_bas_init_t bas_init_obj;
-
-    memset(&bas_init_obj, 0, sizeof(bas_init_obj));
-
-    bas_init_obj.evt_handler = NULL;
-    bas_init_obj.support_notification = true;
-    bas_init_obj.p_report_ref = NULL;
-    bas_init_obj.initial_batt_level = 100;
-
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&bas_init_obj.battery_level_char_attr_md.cccd_write_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&bas_init_obj.battery_level_char_attr_md.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&bas_init_obj.battery_level_char_attr_md.write_perm);
-
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&bas_init_obj.battery_level_report_read_perm);
-
-    err_code = ble_bas_init(&m_bas, &bas_init_obj);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -647,6 +479,7 @@ static void hids_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+/** DFU 相关 **/
 #ifdef BLE_DFU_APP_SUPPORT
 /**@brief 停止广播
  */
@@ -763,59 +596,104 @@ static void dfu_init(void)
 static void services_init(void)
 {
     dis_init();
-    bas_init();
     hids_init();
 #ifdef BLE_DFU_APP_SUPPORT
     dfu_init();
 #endif // BLE_DFU_APP_SUPPORT
 }
 
-/**@brief 初始化电量测量ADC
- */
-static void battery_sensor_init(void)
+static bool keyboard_conn_pass_enter_handler(const uint8_t *key_packet, uint8_t key_packet_size)
 {
-    // Todo: add some code here!
-    nrf_adc_config_t nrf_adc_config = {NRF_ADC_CONFIG_RES_10BIT,                // 10Bit 精度
-                                       NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE, // 完整输入
-                                       NRF_ADC_CONFIG_REF_VBG};                 // 内置 1.2V 基准
-
-    // Initialize and configure ADC
-    nrf_adc_configure((nrf_adc_config_t *)&nrf_adc_config);
-    nrf_adc_input_select(KEYBOARD_ADC);
-    nrf_adc_int_enable(ADC_INTENSET_END_Enabled << ADC_INTENSET_END_Pos);
-    NVIC_SetPriority(ADC_IRQn, NRF_APP_PRIORITY_LOW);
-    NVIC_EnableIRQ(ADC_IRQn);
-}
-
-/**
- * @brief ADC 测量数据Handler
- */
-void ADC_IRQHandler(void)
-{
-    nrf_adc_conversion_event_clean();
-    adc_cycle++;
-    adc_sample_temp += nrf_adc_result_get();
-    if (adc_cycle >= 5)
+    if (passkey_enter_index < 6)
     {
-        adc_sample = adc_sample_temp / 5;
-        adc_sample_temp = 0;
-        adc_cycle = 0;
+        for (uint_fast8_t i = 0; i < key_packet_size; i++)
+        {
+            if (key_packet[i] >= KC_1)
+            {
+                if (key_packet[i] <= KC_0)
+                {
+                    passkey_entered[passkey_enter_index++] = (key_packet[i] + 1 - KC_1) % 10 + '0';
+                }
+                else if (key_packet[i] >= KC_KP_1 && key_packet[i] <= KC_KP_0)
+                {
+                    passkey_entered[passkey_enter_index++] = (key_packet[i] + 1 - KC_KP_1) % 10 + '0';
+                }
+            }
+        }
+        if (passkey_enter_index == 6)
+        {
+            sd_ble_gap_auth_key_reply(passkey_conn_handle, BLE_GAP_AUTH_KEY_TYPE_PASSKEY, passkey_entered);
+        }
+        return true;
     }
     else
     {
-        nrf_adc_start();
+        return false;
     }
 }
 
-static void led_notice(void)
+static void keyboard_switch_scan_mode(bool slow)
 {
-    nrf_gpio_pin_set(LED_NUM);
-    nrf_gpio_pin_set(LED_CAPS);
-    nrf_gpio_pin_set(LED_SCLK);
-    nrf_delay_ms(100);
-    nrf_gpio_pin_clear(LED_NUM);
-    nrf_gpio_pin_clear(LED_CAPS);
-    nrf_gpio_pin_clear(LED_SCLK);
+    uint32_t err_code;
+    err_code = app_timer_stop(m_keyboard_scan_timer_id);
+    if (slow)
+        err_code = app_timer_start(m_keyboard_scan_timer_id, KEYBOARD_SCAN_INTERVAL_SLOW, NULL);
+    else
+        err_code = app_timer_start(m_keyboard_scan_timer_id, KEYBOARD_SCAN_INTERVAL, NULL);
+
+    APP_ERROR_CHECK(err_code);
+}
+
+static void keyboard_sleep_timeout_handler(void *p_context)
+{
+    sleep_counter++;
+    if (sleep_counter == SLEEP_SLOW_TIMEOUT / SLEEP_DEVIDE)
+    {
+        keyboard_switch_scan_mode(true);
+    }
+    else if (sleep_counter == SLEEP_OFF_TIMEOUT / SLEEP_DEVIDE)
+    {
+        sleep_mode_enter();
+    }
+}
+
+static void keyboard_sleep_counter_reset(void)
+{
+    if (sleep_counter >= SLEEP_SLOW_TIMEOUT / SLEEP_DEVIDE)
+    {
+        keyboard_switch_scan_mode(false);
+    }
+
+    sleep_counter = 0;
+}
+
+/**@brief Function for handling the keyboard scan timer timeout.
+ *
+ * @details This function will be called each time the keyboard scan timer expires.
+ *
+ */
+static void keyboard_scan_timeout_handler(void *p_context)
+{
+    UNUSED_PARAMETER(p_context);
+    const uint8_t *key_packet;
+    uint8_t key_packet_size;
+    if (new_packet(&key_packet, &key_packet_size))
+    {
+        keyboard_sleep_counter_reset();
+        for (uint_fast8_t i = 0; i < key_packet_size; i++)
+        {
+            if (key_packet[i] == KC_FN15)
+            {
+                sleep_mode_enter();
+            }
+        }
+        if (keyboard_conn_pass_enter_handler(key_packet, key_packet_size))
+            return; // 处理配对密码输入事件
+        if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
+        {
+            keys_send(key_packet_size, (uint8_t *)&key_packet[0]);
+        }
+    }
 }
 
 /**@brief Function for handling a Connection Parameters error.
@@ -855,14 +733,13 @@ static void timers_start(void)
 {
     uint32_t err_code;
 
-    err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_SEND_INTERVAL, NULL);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = app_timer_start(m_battery_timer_meas_id, BATTERY_LEVEL_MEAS_INTERVAL, NULL);
-    APP_ERROR_CHECK(err_code);
-
     err_code = app_timer_start(m_keyboard_scan_timer_id, KEYBOARD_SCAN_INTERVAL, NULL);
     APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_start(m_keyboard_sleep_timer_id, KEYBOARD_FREE_INTERVAL, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    battery_timer_start();
 }
 
 /**@brief   Function for transmitting a key scan Press & Release Notification.
@@ -880,21 +757,6 @@ static void timers_start(void)
  *             completed due to lack of transmission buffer or other error codes indicating reason
  *             for failure.
  *
- * @note       In case of BLE_ERROR_NO_TX_BUFFERS, remaining pattern that could not be transmitted
- *             can be enqueued \ref buffer_enqueue function.
- *             In case a pattern of 'cofFEe' is the p_key_pattern, with pattern_len as 6 and
- *             pattern_offset as 0, the notifications as observed on the peer side would be
- *             1>    'c', 'o', 'f', 'F', 'E', 'e'
- *             2>    -  , 'o', 'f', 'F', 'E', 'e'
- *             3>    -  ,   -, 'f', 'F', 'E', 'e'
- *             4>    -  ,   -,   -, 'F', 'E', 'e'
- *             5>    -  ,   -,   -,   -, 'E', 'e'
- *             6>    -  ,   -,   -,   -,   -, 'e'
- *             7>    -  ,   -,   -,   -,   -,  -
- *             Here, '-' refers to release, 'c' refers to the key character being transmitted.
- *             Therefore 7 notifications will be sent.
- *             In case an offset of 4 was provided, the pattern notifications sent will be from 5-7
- *             will be transmitted.
  */
 static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
                                             uint8_t *p_key_pattern,
@@ -903,47 +765,6 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
                                             uint16_t *p_actual_len)
 {
     uint32_t err_code;
-    /**
-    uint16_t offset;
-    uint16_t data_len;
-    uint8_t  data[INPUT_REPORT_KEYS_MAX_LEN];
-    
-    // HID Report Descriptor enumerates an array of size 6, the pattern hence shall not be any
-    // longer than this.
-    STATIC_ASSERT((INPUT_REPORT_KEYS_MAX_LEN - 2) == 6);
-
-    ASSERT(pattern_len <= (INPUT_REPORT_KEYS_MAX_LEN - 2));
-
-    offset = 0;
-
-    for(int i=0;i< pattern_len - pattern_offset; i++)
-    {
-        if(p_key_pattern[i+pattern_offset]>=KC_LCTL && p_key_pattern[i+pattern_offset]<=KC_RGUI)
-        {
-            data[MODIFIER_KEY_POS] |= 1 << (p_key_pattern[i+pattern_offset] - KC_LCTL);
-        }
-        else
-        {
-            data[SCAN_CODE_POS+offset] = p_key_pattern[i+pattern_offset];
-            offset++;
-        }
-    }
-    
-    if (!m_in_boot_mode)
-    {
-        err_code = ble_hids_inp_rep_send(p_hids, 
-                                            INPUT_REPORT_KEYS_INDEX,
-                                            INPUT_REPORT_KEYS_MAX_LEN,
-                                            data);
-    }
-    else
-    {
-        err_code = ble_hids_boot_kb_inp_rep_send(p_hids,
-                                                    INPUT_REPORT_KEYS_MAX_LEN,
-                                                    data);
-    }
-     *p_actual_len = offset;
-    **/
     for (int i = 0; i < pattern_len; i++)
     {
         switch (p_key_pattern[i])
@@ -1211,6 +1032,17 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
     }
 }
 
+static void led_notice(void)
+{
+    nrf_gpio_pin_set(LED_NUM);
+    nrf_gpio_pin_set(LED_CAPS);
+    nrf_gpio_pin_set(LED_SCLK);
+    nrf_delay_ms(100);
+    nrf_gpio_pin_clear(LED_NUM);
+    nrf_gpio_pin_clear(LED_CAPS);
+    nrf_gpio_pin_clear(LED_SCLK);
+}
+
 /**@brief Function for putting the chip into sleep mode.
  *
  * @note This function will not return.
@@ -1219,10 +1051,7 @@ static void sleep_mode_enter(void)
 {
     uint32_t err_code;
 
-    // Todo: Use custom sleep prepare code.
-    // Prepare wakeup buttons.
     sleep_mode_prepare();
-
     led_notice();
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
@@ -1411,16 +1240,6 @@ static void on_ble_evt(ble_evt_t *p_ble_evt)
     {
     case BLE_GAP_EVT_CONNECTED:
         m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-        /*
-        err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
-        APP_ERROR_CHECK(err_code);
-
-        // 1连接一建立就发送安全请求，从而促使手机发送配对请求过来
-        ble_gap_sec_params_t params;
-        params.bond = SEC_PARAM_BOND;
-        params.mitm = SEC_PARAM_MITM;
-        sd_ble_gap_authenticate(m_conn_handle, &params);
-        */
         break;
 
     case BLE_EVT_TX_COMPLETE:
@@ -1500,7 +1319,7 @@ static void ble_evt_dispatch(ble_evt_t *p_ble_evt)
     ble_advertising_on_ble_evt(p_ble_evt);
     ble_conn_params_on_ble_evt(p_ble_evt);
     ble_hids_on_ble_evt(&m_hids, p_ble_evt);
-    ble_bas_on_ble_evt(&m_bas, p_ble_evt);
+    battery_service_ble_evt(p_ble_evt);
 }
 
 /**@brief   Function for dispatching a system event to interested modules.
@@ -1603,12 +1422,12 @@ static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
     case DM_EVT_LINK_SECURED:
         app_context_load(p_handle);
         break;
-#endif // BLE_DFU_APP_SUPPORT
-        case BLE_GAP_SEC_STATUS_PASSKEY_ENTRY_FAILED: //handle passkey pairing fail event
-        {
-            err_code = sd_ble_gap_disconnect(m_conn_handle , BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-            APP_ERROR_CHECK(err_code);
-            return NRF_SUCCESS;
+#endif                                            // BLE_DFU_APP_SUPPORT
+    case BLE_GAP_SEC_STATUS_PASSKEY_ENTRY_FAILED: //handle passkey pairing fail event
+    {
+        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+        APP_ERROR_CHECK(err_code);
+        return NRF_SUCCESS;
     }
     }
 
@@ -1658,7 +1477,6 @@ static void device_manager_init(bool erase_bonds)
  */
 static void buttons_leds_init(void)
 {
-    //Todo: add btn & led init code here
     cherry8x16_init();
 
     nrf_gpio_cfg_output(LED_NUM);
@@ -1680,23 +1498,23 @@ int main(void)
 {
     uint32_t err_code;
     _Bool erase_bond = false;
-    
+
     // Initialize.
     app_trace_init();
     timers_init();
     buttons_leds_init();
     ble_stack_init();
     scheduler_init();
-    
+
     nrf_gpio_pin_set(row_pin_array[1]);
     erase_bond = nrf_gpio_pin_read(column_pin_array[1]);
     nrf_gpio_pin_clear(row_pin_array[1]);
-    
+
     device_manager_init(erase_bond);
     gap_params_init();
     advertising_init();
     services_init();
-    battery_sensor_init();
+    battery_service_init();
     conn_params_init();
     buffer_init();
 
@@ -1706,10 +1524,9 @@ int main(void)
     APP_ERROR_CHECK(err_code);
 
     led_notice();
-    
+
     nrf_gpio_pin_set(LED_NUM);
     m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = true;
-    
 
     // Enter main loop.
     for (;;)
