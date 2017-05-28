@@ -168,6 +168,8 @@ static bool keymatrix_read(uint16_t *matrix)
                 debouncing = 3;
             }
             nrf_gpio_pin_clear((uint32_t)row_pin_array[r]);
+            uint_fast8_t i=6;
+            while(i--) __nop();
         }
         nrf_delay_ms(1);
     }
