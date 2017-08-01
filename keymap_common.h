@@ -14,6 +14,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+/**
+ * 键盘矩阵基配置文件
+ * 
+ * 定义各个按键的位置，方便编写Keymap
+ */
 #ifndef KEYMAP_COMMON_H
 #define KEYMAP_COMMON_H
 
@@ -23,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* 4100/4125 keymap definition macro
-   See keymap.xlsx for more infomation.
+   See keymap.xlsx in Wiki's Advanced page for more infomation.
  */
 #define KEYMAP( \
     K00, K01, K02, K03, K04, K05, K06, K07, K08, K09, K0A, K0B, K0C, K0D, K0E, \

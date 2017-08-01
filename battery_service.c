@@ -10,13 +10,14 @@
 
 APP_TIMER_DEF(m_battery_timer_id);
 
-static ble_bas_t m_bas;                                  /**< Structure used to identify the battery service. */
+static ble_bas_t m_bas; /**< Structure used to identify the battery service. */
 
-uint16_t adc_result_queue[ADC_RESULT_QUEUE_SIZE];   /**中值滤波**/
-uint8_t adc_result_queue_index;        
-uint32_t currVot;                                   /**< Current Vottage of battery. */            
+uint16_t adc_result_queue[ADC_RESULT_QUEUE_SIZE]; /**中值滤波**/
+uint8_t adc_result_queue_index;
+uint32_t currVot; /**< Current Vottage of battery. */
 
-/**@brief Function for initializing Battery Service.
+/** 
+ * 初始化电量服务(BAS)
  */
 static void bas_init(void)
 {
@@ -40,7 +41,8 @@ static void bas_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-/**@brief 初始化电量测量ADC
+/**
+ * 初始化电量测量ADC
  */
 static void battery_sensor_init(void)
 {
@@ -69,10 +71,13 @@ static void battery_level_meas_timeout_handler(void *p_context)
     nrf_adc_start();
 }
 
+/** 
+ * 初始化电量计时器
+ */
 static void battery_timer_init(void)
 {
     uint32_t err_code;
-    
+
     // Create battery timer.
     err_code = app_timer_create(&m_battery_timer_id,
                                 APP_TIMER_MODE_REPEATED,
@@ -81,6 +86,7 @@ static void battery_timer_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+/** 初始化电量服务 */
 void battery_service_init(void)
 {
     battery_sensor_init();
@@ -88,26 +94,29 @@ void battery_service_init(void)
     battery_timer_init();
 }
 
-static uint8_t bas_vot2lvl(uint16_t lvl){
-    if(lvl>4200)
+/** 电压转换到电量 */
+static uint8_t bas_vot2lvl(uint16_t lvl)
+{
+    if (lvl > 4200)
         return 100;
-    else if(lvl>4000)
-        return 90 + (lvl-4000)/20;
-    else if(lvl>3600)
-        return 10 + (lvl-3600)/5;
-    else if(lvl>3200)
-        return (lvl-3200)/40;
+    else if (lvl > 4000)
+        return 90 + (lvl - 4000) / 20;
+    else if (lvl > 3600)
+        return 10 + (lvl - 3600) / 5;
+    else if (lvl > 3200)
+        return (lvl - 3200) / 40;
     else
         return 0;
 }
 
-/**@brief 上传电量数据
+/**
+ * 上传电量数据
  */
 static void battery_level_update(void)
 {
     uint32_t err_code;
     uint8_t battery_level;
-    
+
     battery_level = bas_vot2lvl(currVot);
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
@@ -120,36 +129,39 @@ static void battery_level_update(void)
     }
 }
 
+/** 启动电量计时器 */
 void battery_timer_start(void)
 {
     uint32_t err_code;
-    
+
     err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL_FAST, NULL);
     APP_ERROR_CHECK(err_code);
-
 }
 
 /** ADC结果转换到实际电压 */
-static uint16_t adc2vottage(int32_t adcResult){
+static uint16_t adc2vottage(int32_t adcResult)
+{
     // Vmes = Vreal * 2.2M / (10M + 2.2M)
     // result = Vmes / Vref * BATTERY_ADC_DIV
     // 22/122约等于2/11
     return (uint32_t)(adcResult * ADC_REF_VOLTAGE_IN_MILLIVOLTS * 11 >> 11);
 }
 
+/** 对获取到的电压数值进行预处理 */
 static uint16_t adc_result_calc()
 {
-    uint16_t min=0xFFFF,max=0x0000,curr;
+    // 中值滤波
+    uint16_t min = 0xFFFF, max = 0x0000, curr;
     uint32_t total = 0;
-    for(int i=0;i<ADC_RESULT_QUEUE_SIZE;i++)
+    for (int i = 0; i < ADC_RESULT_QUEUE_SIZE; i++)
     {
         curr = adc_result_queue[i];
-        if(curr > max)
+        if (curr > max)
             max = curr;
-        if(curr < min)
+        if (curr < min)
             min = curr;
     }
-    for(int i=0;i<ADC_RESULT_QUEUE_SIZE;i++)
+    for (int i = 0; i < ADC_RESULT_QUEUE_SIZE; i++)
     {
         total += adc_result_queue[i];
     }
@@ -158,37 +170,39 @@ static uint16_t adc_result_calc()
     return total / (ADC_RESULT_QUEUE_SIZE - 2);
 }
 
+/** ADC电量测量回调 */
 static void ADC_appsh_mes_evt_handler(void *p_event_data, uint16_t event_size)
 {
     UNUSED_PARAMETER(p_event_data);
     UNUSED_PARAMETER(event_size);
     uint32_t err_code;
-    
-    if(adc_result_queue_index >= ADC_RESULT_QUEUE_SIZE)
+
+    if (adc_result_queue_index >= ADC_RESULT_QUEUE_SIZE)
     {
         adc_result_queue_index = 0;
     }
     adc_result_queue[adc_result_queue_index++] = nrf_adc_result_get();
-    
-    if(currVot == adc2vottage(adc_result_calc()) && currVot > 0) // 数据稳定后才延长测量间隔
+
+    if (currVot == adc2vottage(adc_result_calc()) && currVot > 0) // 数据稳定后才延长测量间隔
     {
         err_code = app_timer_stop(m_battery_timer_id);
         err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL_SLOW, NULL);
         APP_ERROR_CHECK(err_code);
     }
-    
+
     currVot = adc2vottage(adc_result_calc());
     battery_level_update();
 }
 
-/** ADC测量完毕*/
-void ADC_IRQHandler(){
+/** ADC测量完毕 */
+void ADC_IRQHandler()
+{
     nrf_adc_conversion_event_clean();
     nrf_adc_stop();
     app_sched_event_put(NULL, NULL, ADC_appsh_mes_evt_handler);
 }
 
-
+/** BLE电量服务事件处理 */
 void battery_service_ble_evt(ble_evt_t *p_ble_evt)
 {
     ble_bas_on_ble_evt(&m_bas, p_ble_evt);

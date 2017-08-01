@@ -29,16 +29,27 @@ static uint8_t m_number_of_transmitted_keys;                                 //!
 
 static uint8_t m_key_packet[KEY_PACKET_SIZE]; //!< Stores last created key packet. One byte is used for modifier keys, one for OEMs. Key values are USB HID keycodes.
 
+/** 判断按键是否和上次按下的按键相同 */
 static bool cherry8x16_have_keys_changed(const uint8_t *state_now,
                                          uint8_t number_of_now_pressed_keys,
                                          const uint8_t *state_before,
                                          uint8_t number_of_before_pressed_keys);
+/**
+ * 读取当前的键盘阵列
+ */
 static bool keymatrix_read(uint16_t *matrix);
+
+/** 按键扫描某行 */
 static uint16_t read_column(void);
+
+/** 在Keypacket中添加一个按键 */
 static void cherry8x16_keypacket_addkey(uint8_t key);
+/** 创建一个KeyPacket */
 static void cherry8x16_keypacket_create(uint8_t *key_packet, uint8_t key_packet_size);
+/** 将阵列数据转为KeyPacket */
 static void matrix_to_keycode(uint16_t *matrix, uint8_t *pressed_keys, uint8_t *number_of_pressed_keys);
 
+/** 准备进入睡眠模式 */
 void sleep_mode_prepare(void)
 {
     for (uint_fast8_t i = MATRIX_ROWS; i--;)
@@ -49,6 +60,7 @@ void sleep_mode_prepare(void)
     nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[wakeup_button_row_index], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
 }
 
+/** 初始化按键扫描 */
 bool cherry8x16_init(void)
 {
     for (uint_fast8_t i = MATRIX_ROWS; i--;)
@@ -69,7 +81,7 @@ bool new_packet(const uint8_t **p_key_packet, uint8_t *p_key_packet_size)
     bool new_packet_prepared;
     uint16_t key_matrix[MATRIX_ROWS];
 
-    // Save currently pressed keys
+    // 暂存当前的按键
     for (uint_fast8_t i = CHERRY8x16_MAX_NUM_OF_PRESSED_KEYS; i--;)
     {
         m_transmitted_keys[i] = m_currently_pressed_keys[i];
@@ -90,13 +102,13 @@ bool new_packet(const uint8_t **p_key_packet, uint8_t *p_key_packet_size)
         }
         else
         {
-            // The same keys are still pressed, no need to create a new packet
+            // 本次按键与上次按键一样，不创建数据包
             new_packet_prepared = false;
         }
     }
     else
     {
-        // Ghosting detected. Don't create a packet.
+        // 检测到按键冲突，不创建数据包
         new_packet_prepared = false;
     }
 
@@ -150,11 +162,14 @@ static void matrix_to_keycode(uint16_t *matrix, uint8_t *pressed_keys, uint8_t *
     }
 }
 
+/** 读取按键阵列 */
 static bool keymatrix_read(uint16_t *matrix)
 {
     uint16_t matrix_debouncing[MATRIX_ROWS];
     int debouncing = 1;
     bool ghost = false;
+
+    // 消抖
     while (debouncing--)
     {
         for (uint_fast8_t r = 0; r < MATRIX_ROWS; r++)
@@ -168,20 +183,21 @@ static bool keymatrix_read(uint16_t *matrix)
                 debouncing = 3;
             }
             nrf_gpio_pin_clear((uint32_t)row_pin_array[r]);
-            uint_fast8_t i=6;
-            while(i--) __nop();
+
+            for(int i=0; i<6; i++) __nop(); //防止切换速度过快导致的第一行按键双按的问题
         }
         nrf_delay_ms(1);
     }
 
+    // 检测按键冲突
     for (uint_fast8_t i = 0; i < MATRIX_ROWS; i++)
     {
-        if (((matrix_debouncing[i] - 1) & matrix_debouncing[i]) > 0) //more than 1 key
+        if (((matrix_debouncing[i] - 1) & matrix_debouncing[i]) > 0) // 该行有两个及以上的按键按下
         {
             for (uint_fast8_t j = 0; j < MATRIX_ROWS; j++)
             {
                 if (i != j)
-                    if (matrix_debouncing[i] & matrix_debouncing[j]) //check ghost key
+                    if (matrix_debouncing[i] & matrix_debouncing[j]) // 且另一行有与这一行相同的按键按下
                     {
                         ghost = true;
                         continue;
@@ -194,6 +210,7 @@ static bool keymatrix_read(uint16_t *matrix)
     return !ghost;
 }
 
+/** 读取某行 */
 static uint16_t read_column(void)
 {
     uint16_t result = 0;
@@ -208,7 +225,7 @@ static uint16_t read_column(void)
 }
 
 /**
- * @brief Function for determining whether the keyboard matrix state has changed compared to the state before.
+ * @brief 检测按键是否改变
  *
  * @param state_now List of pressed keys in current state
  * @param number_of_now_pressed_keys Number of pressed keys in current state
@@ -241,7 +258,7 @@ static bool cherry8x16_have_keys_changed(const uint8_t *state_now,
 }
 
 /**
- * @brief Function for adding a key to the key packet.
+ * @brief 在KeyPacket中添加一个按键
  *
  * If key is found to be in the packet, it will not be added twice.
  * Attempts to add more keys than the buffer capacity allows will be silently ignored.
@@ -250,6 +267,7 @@ static bool cherry8x16_have_keys_changed(const uint8_t *state_now,
  */
 static void cherry8x16_keypacket_addkey(uint8_t key)
 {
+    // 检测按键是否存在
     for (uint_fast8_t i = KEY_PACKET_KEY_INDEX; i < KEY_PACKET_SIZE; i++)
     {
         if (m_key_packet[i] == key)
@@ -258,6 +276,7 @@ static void cherry8x16_keypacket_addkey(uint8_t key)
         }
     }
 
+    // 在第一个空位置添加按键
     for (uint_fast8_t i = KEY_PACKET_KEY_INDEX; i < KEY_PACKET_SIZE; i++)
     {
         if (m_key_packet[i] == KEY_PACKET_NO_KEY)
@@ -281,7 +300,7 @@ static void cherry8x16_keypacket_addkey(uint8_t key)
  */
 static void cherry8x16_keypacket_create(uint8_t *key_packet, uint8_t key_packet_size)
 {
-    // Clear key_packet contents
+    // 清空当前Keypacket
     for (uint_fast8_t i = KEY_PACKET_KEY_INDEX; i < key_packet_size; i++)
     {
         key_packet[i] = KEY_PACKET_NO_KEY;
@@ -289,7 +308,7 @@ static void cherry8x16_keypacket_create(uint8_t *key_packet, uint8_t key_packet_
     key_packet[KEY_PACKET_MODIFIER_KEY_INDEX] = 0;
     key_packet[KEY_PACKET_RESERVED_INDEX] = 0;
 
-    // Give priority to keys that were already pressed when we transmitted them the last time.
+    // 先处理上次按下后没放开的按键
     for (uint_fast8_t i = 0; i < m_number_of_transmitted_keys; i++)
     {
         for (uint_fast8_t j = 0; j < m_num_of_currently_pressed_keys; j++)
@@ -302,7 +321,7 @@ static void cherry8x16_keypacket_create(uint8_t *key_packet, uint8_t key_packet_
         }
     }
 
-    // detect modifier keys, and add rest of the keys to the packet
+    // 检测功能键，将剩下的按键加入到KeyPacket里面去
     for (uint_fast8_t i = 0; i < m_num_of_currently_pressed_keys; i++)
     {
         // Modifier HID usage codes are from 0xE0 to 0xE7
