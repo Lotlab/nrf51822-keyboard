@@ -1,1 +1,1 @@
-下载nrf SDK 10.0后将本文件夹放到examples/ble_peripheral中
+下载后，打开main/project中的相关工程进行编译即可
