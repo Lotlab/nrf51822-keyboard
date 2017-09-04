@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "battery_service.h": "c",
+        "keyboard_driver.h": "c",
+        "nrf_gpio.h": "c",
+        "nrf_soc.h": "c",
+        "stdint.h": "c"
+    }
+}

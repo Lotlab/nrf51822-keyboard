@@ -47,10 +47,7 @@
 #include "softdevice_handler_appsh.h"
 #include "pstorage_platform.h"
 #include "nrf_mbr.h"
-
-#define LED_NUM 11
-#define LED_CAPS 12
-#define LED_SCLK 13
+#include "boards.h"
 
 #define BOOTLOADER_BTN_OPT 28
 #define BOOTLOADER_BTN_IPT 21
