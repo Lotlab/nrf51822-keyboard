@@ -739,6 +739,8 @@ static void timers_start(void)
     battery_timer_start();
 }
 
+static void led_change_handler(uint8_t val, bool all);
+
 /**@brief   Function for transmitting a key scan Press & Release Notification.
  *
  * @warning This handler is an example only. You need to analyze how you wish to send the key
@@ -769,16 +771,13 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
         switch (p_key_pattern[i])
         {
         case KC_NUMLOCK:
-            m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = !m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK];
-            nrf_gpio_pin_toggle(LED_NUM);
+            led_change_handler(0x01, false);
             break;
         case KC_CAPSLOCK:
-            m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK] = !m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK];
-            nrf_gpio_pin_toggle(LED_CAPS);
+            led_change_handler(0x02, false);
             break;
         case KC_SCROLLLOCK:
-            m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK] = !m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK];
-            nrf_gpio_pin_toggle(LED_SCLK);
+            led_change_handler(0x04, false);
             break;
         default:
             break;
@@ -968,6 +967,8 @@ static void keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
     }
 }
 
+static void set_led_num(uint8_t num);
+
 /**@brief Function for handling the HID Report Characteristic Write event.
  *
  * @param[in]   p_evt   HID service event.
@@ -993,54 +994,57 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
                                              &report_val);
             APP_ERROR_CHECK(err_code);
 
-            if (report_val & 1 << OUTPUT_REPORT_BIT_MASK_NUM_LOCK)
-            {
-                nrf_gpio_pin_set(LED_NUM);
-                m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = true;
-            }
-            else
-            {
-                nrf_gpio_pin_clear(LED_NUM);
-                m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = false;
-            }
-
-            if (report_val & 1 << OUTPUT_REPORT_BIT_MASK_CAPS_LOCK)
-            {
-                nrf_gpio_pin_set(LED_CAPS);
-                m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK] = true;
-            }
-            else
-            {
-                nrf_gpio_pin_clear(LED_CAPS);
-                m_led_state[OUTPUT_REPORT_BIT_MASK_CAPS_LOCK] = false;
-            }
-
-            if (report_val & 1 << OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK)
-            {
-                nrf_gpio_pin_set(LED_SCLK);
-                m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK] = true;
-            }
-            else
-            {
-                nrf_gpio_pin_clear(LED_SCLK);
-                m_led_state[OUTPUT_REPORT_BIT_MASK_SCROLL_LOCK] = false;
-            }
-
+            led_change_handler(report_val, true);
             // The report received is not supported by this application. Do nothing.
         }
     }
 }
+static void led_notice(uint8_t num, uint8_t type);
 
-static void led_notice(void)
+static void led_change_handler(uint8_t val, bool all)
 {
-    nrf_gpio_pin_set(LED_NUM);
-    nrf_gpio_pin_set(LED_CAPS);
-    nrf_gpio_pin_set(LED_SCLK);
-    nrf_delay_ms(100);
-    nrf_gpio_pin_clear(LED_NUM);
-    nrf_gpio_pin_clear(LED_CAPS);
-    nrf_gpio_pin_clear(LED_SCLK);
-    nrf_delay_ms(100);
+    if(!all)
+    {
+        uint8_t newBit = 0x00;
+        for(uint8_t i=0; i<3; i++)
+            newBit |= m_led_state[i] << i;
+        
+        val = newBit ^ val; 
+    }
+    
+    led_notice(val, 0x00);
+    for(uint8_t i=0; i<3; i++)
+        m_led_state[i] = val & 1 << i;
+}
+
+/**@brief Notice by Led
+ *
+ * @param[in]   num   led val.
+ * @param[in]   type  flash type;
+ */
+static void led_notice(uint8_t num, uint8_t type)
+{
+    switch(type) 
+    {
+        case 0:
+            set_led_num(num);
+            nrf_delay_ms(50);
+            set_led_num(0x00);
+        break;
+        case 1:
+            set_led_num(0x07);
+            nrf_delay_ms(100);
+            set_led_num(num);
+            nrf_delay_ms(100);
+        break; 
+    }
+}
+
+static void set_led_num(uint8_t num)
+{
+    nrf_gpio_pin_write(LED_NUM, num & 0x01);
+    nrf_gpio_pin_write(LED_CAPS, num & 0x02);
+    nrf_gpio_pin_write(LED_SCLK, num & 0x04);
 }
 
 /**@brief Function for putting the chip into sleep mode.
@@ -1052,7 +1056,7 @@ static void sleep_mode_enter(void)
     uint32_t err_code;
 
     sleep_mode_prepare();
-    led_notice();
+    led_notice(0x00, 0x01);
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
     err_code = sd_power_system_off();
@@ -1411,7 +1415,6 @@ static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
                                            ret_code_t event_result)
 {
     APP_ERROR_CHECK(event_result);
-    uint32_t err_code;
     switch (p_event->event_id)
     {
         case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
@@ -1478,18 +1481,6 @@ static void buttons_leds_init(void)
     nrf_gpio_cfg_output(LED_SCLK);
 }
 
-static void set_led_num(uint8_t num)
-{
-    if(num & 0x01)nrf_gpio_pin_set(LED_NUM);
-    else nrf_gpio_pin_clear(LED_NUM);
-    
-    if(num & 0x02)nrf_gpio_pin_set(LED_CAPS);
-    else nrf_gpio_pin_clear(LED_CAPS);
-    
-    if(num & 0x04)nrf_gpio_pin_set(LED_SCLK);
-    else nrf_gpio_pin_clear(LED_SCLK);
-}
-
 /**@brief Function for the Power manager.
  */
 static void power_manage(void)
@@ -1524,16 +1515,14 @@ int main(void)
     conn_params_init();
     buffer_init();
 
-    led_notice();
+    led_notice(0x00, 0x01);
 
     // Start execution.
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
-
-    nrf_gpio_pin_set(LED_NUM);
-    m_led_state[OUTPUT_REPORT_BIT_MASK_NUM_LOCK] = true;
-
+    
+    led_change_handler(0x01, true);
     // Enter main loop.
     for (;;)
     {
