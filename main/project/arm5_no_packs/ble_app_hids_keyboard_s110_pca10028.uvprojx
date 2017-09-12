@@ -133,10 +133,10 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>4099</DriverSelection>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
-          <Flash2>Segger\JL2CM3.dll</Flash2>
+          <Flash2>BIN\UL2CM3.DLL</Flash2>
           <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
@@ -333,7 +333,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--c99</MiscControls>
-              <Define>BLE_STACK_SUPPORT_REQD S110 BOARD_PCA10028 BSP_UART_SUPPORT SOFTDEVICE_PRESENT NRF51 SWI_DISABLE0 BLE_DFU_APP_SUPPORT DEBUG</Define>
+              <Define>BLE_STACK_SUPPORT_REQD S110 BOARD_PCA10028 BSP_UART_SUPPORT SOFTDEVICE_PRESENT NRF51 SWI_DISABLE0 BLE_DFU_APP_SUPPORT</Define>
               <Undefine></Undefine>
               <IncludePath>..\..\config;..\..\..\sdk</IncludePath>
             </VariousControls>

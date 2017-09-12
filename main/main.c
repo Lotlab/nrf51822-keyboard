@@ -41,13 +41,10 @@
 #include "ble_hids.h"
 #include "ble_dis.h"
 #include "ble_conn_params.h"
-// #include "bsp.h"
-// #include "bsp_btn_ble.h"
 #include "app_scheduler.h"
 #include "softdevice_handler_appsh.h"
 #include "app_timer_appsh.h"
 #include "device_manager.h"
-// #include "app_button.h"
 #include "pstorage.h"
 #include "nrf_delay.h"
 #include "app_trace.h"
@@ -424,17 +421,17 @@ static void hids_init(void)
     p_input_report->rep_ref.report_id = INPUT_REP_REF_ID;
     p_input_report->rep_ref.report_type = BLE_HIDS_REP_TYPE_INPUT;
 
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.cccd_write_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.cccd_write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
 
     p_output_report = &output_report_array[OUTPUT_REPORT_INDEX];
     p_output_report->max_len = OUTPUT_REPORT_MAX_LEN;
     p_output_report->rep_ref.report_id = OUTPUT_REP_REF_ID;
     p_output_report->rep_ref.report_type = BLE_HIDS_REP_TYPE_OUTPUT;
 
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_output_report->security_mode.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_output_report->security_mode.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_output_report->security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_output_report->security_mode.write_perm);
 
     hid_info_flags = HID_INFO_FLAG_REMOTE_WAKE_MSK | HID_INFO_FLAG_NORMALLY_CONNECTABLE_MSK;
 
@@ -458,22 +455,22 @@ static void hids_init(void)
     hids_init_obj.included_services_count = 0;
     hids_init_obj.p_included_services_array = NULL;
 
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.rep_map.security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.rep_map.security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.rep_map.security_mode.write_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.hid_information.security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.hid_information.security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.hid_information.security_mode.write_perm);
 
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(
         &hids_init_obj.security_mode_boot_kb_inp_rep.cccd_write_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.security_mode_boot_kb_inp_rep.write_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.write_perm);
 
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_protocol.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_protocol.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_protocol.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_protocol.write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.security_mode_ctrl_point.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_ctrl_point.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_ctrl_point.write_perm);
 
     err_code = ble_hids_init(&m_hids, &hids_init_obj);
     APP_ERROR_CHECK(err_code);
@@ -765,6 +762,8 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
                                             uint16_t *p_actual_len)
 {
     uint32_t err_code;
+    
+    // 处理按钮灯
     for (int i = 0; i < pattern_len; i++)
     {
         switch (p_key_pattern[i])
@@ -1415,21 +1414,15 @@ static uint32_t device_manager_evt_handler(dm_handle_t const *p_handle,
     uint32_t err_code;
     switch (p_event->event_id)
     {
-    case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
-    case DM_EVT_SECURITY_SETUP_COMPLETE:
-        m_bonded_peer_handle = (*p_handle);
-        break;
+        case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
+        case DM_EVT_SECURITY_SETUP_COMPLETE:
+            m_bonded_peer_handle = (*p_handle);
+            break;
 #ifdef BLE_DFU_APP_SUPPORT
-    case DM_EVT_LINK_SECURED:
-        app_context_load(p_handle);
-        break;
-#endif                                            // BLE_DFU_APP_SUPPORT
-    case BLE_GAP_SEC_STATUS_PASSKEY_ENTRY_FAILED: //handle passkey pairing fail event
-    {
-        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-        APP_ERROR_CHECK(err_code);
-        return NRF_SUCCESS;
-    }
+        case DM_EVT_LINK_SECURED:
+            app_context_load(p_handle);
+            break;
+#endif
     }
 
     return NRF_SUCCESS;
@@ -1536,7 +1529,6 @@ int main(void)
     // Start execution.
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-    set_led_num(err_code);
     APP_ERROR_CHECK(err_code);
 
     nrf_gpio_pin_set(LED_NUM);
