@@ -335,3 +335,16 @@ static void cherry8x16_keypacket_create(uint8_t *key_packet, uint8_t key_packet_
         }
     }
 }
+
+bool cherry8x16_getch(uint8_t keycode)
+{
+    const uint8_t *key_packet;
+    uint8_t key_packet_size;
+    if (new_packet(&key_packet, &key_packet_size))
+    {
+        for (uint_fast8_t i = 0; i < key_packet_size; i++)
+            if (key_packet[i] == keycode)
+                return true;
+    }
+    return false;
+}

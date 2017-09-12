@@ -615,6 +615,7 @@ static bool keyboard_conn_pass_enter_handler(const uint8_t *key_packet, uint8_t 
                 {
                     passkey_entered[passkey_enter_index++] = (key_packet[i] + 1 - KC_KP_1) % 10 + '0';
                 }
+                else if (key_packet[i] == KC_BSPACE) passkey_enter_index--;
             }
         }
         if (passkey_enter_index == 6)
@@ -1503,9 +1504,7 @@ int main(void)
     ble_stack_init();
     scheduler_init();
 
-    nrf_gpio_pin_set(row_pin_array[1]);
-    erase_bond = nrf_gpio_pin_read(column_pin_array[1]);
-    nrf_gpio_pin_clear(row_pin_array[1]);
+    erase_bond = cherry8x16_getch(KC_2);
 
     device_manager_init(erase_bond);
     gap_params_init();

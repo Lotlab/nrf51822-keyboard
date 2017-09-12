@@ -49,6 +49,7 @@ bool cherry8x16_init(void);
  * @retval false  If packet was not created.
  */
 bool new_packet(const uint8_t ** p_key_packet, uint8_t *p_key_packet_size);
+bool cherry8x16_getch(uint8_t keycode);
 void sleep_mode_prepare(void);
 /**
  *@}
