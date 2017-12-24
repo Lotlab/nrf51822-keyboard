@@ -1,6 +1,6 @@
 #include "CH554_SDCC.h"
 #include "compiler.h"
-#include "Debug.H"
+#include "system.h"
 #include "usb_descriptor.h"
 #include <string.h>
 #include <stdbool.h>
@@ -25,12 +25,10 @@ uint8_t HIDMouse[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
 void printHEX(uint8_t * string, uint8_t len)
 {
-    uint8_t i;
-    for( i=0;i<len;i++)
+    for(uint8_t i=0;i<len;i++)
     {
         printf("%02x ", string[i]);
     }
-
 }
 
 
@@ -50,7 +48,7 @@ void CH554SoftReset()
 void CH554USBDevWakeup( )
 {
     UDEV_CTRL |= bUD_LOW_SPEED;
-    mDelaymS(2);
+    DelayMs(2);
     UDEV_CTRL &= ~bUD_LOW_SPEED;
 }
 
@@ -444,9 +442,9 @@ void CfgSysClock();
 void main()
 {
     CfgSysClock();
-    mDelaymS(5);                                                          //修改主频等待内部晶振稳定,必加
-    mInitSTDIO( );                                                        //串口0初始化
-    mDelaymS(5);
+    DelayMs(5);                                                          //修改主频等待内部晶振稳定,必加
+    InitUART();                                                        //串口0初始化
+    DelayMs(5);
     printf_tiny("Hello, world1\n");
 
     USBDeviceInit();                                                      //USB设备模式初始化
@@ -471,29 +469,7 @@ void main()
             Enp1IntIn();
         }
         */
-        mDelaymS( 100 );
-
-
         LED = !LED;
-        mDelaymS(500);
+        DelayMs(500);
     }
-}
-
-/** \brief 配置系统时钟
- *
- * \param void
- * \return void
- *
- */
-void	CfgSysClock( )
-{
-    SAFE_MOD = 0x55;
-    SAFE_MOD = 0xAA;
-    CLOCK_CFG = CLOCK_CFG & ~ MASK_SYS_CK_SEL | 0x04;  // 12MHz
-    SAFE_MOD = 0x00;
-}
-
-void putchar(char c)
-{
-    CH554UART0SendByte(c);
 }
