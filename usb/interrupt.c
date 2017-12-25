@@ -72,7 +72,7 @@ void UsbBusResetEventHandler()
     {
         UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
         UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
-        UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
+        UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
         USB_DEV_AD = 0x00;
         UIF_SUSPEND = 0;
         UIF_TRANSFER = 0;

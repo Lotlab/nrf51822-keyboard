@@ -2,6 +2,12 @@
 #define __ENDPOINTS_H__
 #include <stdint.h>
 
+extern uint8_t __xdata Ep0Buffer[];
+extern uint8_t __xdata Ep1Buffer[];
+extern uint8_t __xdata Ep2Buffer[];
+
+extern uint8_t SendFinish;
+
 extern void USBDeviceInit();
 
 extern void EP0_OUT();

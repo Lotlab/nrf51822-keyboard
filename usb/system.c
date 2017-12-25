@@ -70,7 +70,6 @@ void DelayMs(uint16_t n)                                                  // 以
 
 int putchar(int c)
 {
-    //查询发送，中断方式可不用下面2条语句,但发送前需TI=0
 	while(TI == 0);
 	TI = 0;
     SBUF = c;
@@ -79,7 +78,9 @@ int putchar(int c)
 
 int getchar()
 {
-    while(RI == 0);                                                            //查询接收，中断方式可不用
+    while(RI == 0);
     RI = 0;
     return SBUF;
 }
+
+

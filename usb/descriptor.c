@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "usb_descriptor.h"
+#include <stdio.h>
 
 /** \brief 获取文本描述符
  *
@@ -37,6 +38,7 @@ uint8_t getStringDescriptor(uint8_t order, uint8_t ** strPtor)
  */
 uint8_t GetUsbDescriptor(uint8_t type1, uint8_t type2, uint8_t * len, uint8_t ** strPtr)
 {
+    printf_tiny("getDesc:%x, %x\n", type1, type2);
     switch(type1)
     {
         /**< 设备描述符 */

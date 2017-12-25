@@ -265,14 +265,14 @@ uint8_t const report_desc_HID1[]=
     0x09, 0x01,    // Usage Page (Vendor Defined)
     0xa1, 0x01,    // COLLECTION (Application)
     0x85, 0x3f,    // Report ID (Vendor Defined)
-    0x95, MAX_PACKET_SIZE-1,    // Report Count
+    0x95, 0x08,    // Report Count. 8 byte there
     0x75, 0x08,    // Report Size
     0x25, 0x01,    // Usage Maximum
     0x15, 0x01,    // Usage Minimum
     0x09, 0x01,    // Vendor Usage
     0x81, 0x02,    // Input (Data,Var,Abs)
     0x85, 0x3f,    // Report ID (Vendor Defined)
-    0x95, MAX_PACKET_SIZE-1,    //Report Count
+    0x95, 0x08,    // Report Count. 8 byte there
     0x75, 0x08,    // Report Size
     0x25, 0x01,    // Usage Maximum
     0x15, 0x01,    // Usage Minimum
