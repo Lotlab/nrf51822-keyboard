@@ -10,15 +10,6 @@
 #define LED RXD1
 #define Ep2InKey P1_5;
 
-
-void printHEX(uint8_t * string, uint8_t len)
-{
-    for(uint8_t i=0;i<len;i++)
-    {
-        printf("%02x ", string[i]);
-    }
-}
-
 /** \brief CH554软复位
  *
  */

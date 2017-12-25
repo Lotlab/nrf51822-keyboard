@@ -9,6 +9,8 @@
 #define SIZEOF_DEVICE_DESCRIPTOR  0x12
 #define EP0_PACKET_SIZE       0x08
 
+#define MAX_PACKET_SIZE       64
+
 
 uint8_t const DeviceDescriptor[SIZEOF_DEVICE_DESCRIPTOR] = {
     SIZEOF_DEVICE_DESCRIPTOR,               // Length of this descriptor
@@ -208,6 +210,19 @@ uint8_t const StringDescriptor[] = {
     'i',0x00,'g',0x00,'u',0x00,'r',0x00,'e',0x00
 };
 
+
+typedef struct StringPointerAndLength {
+    uint8_t * pointer;
+    uint8_t length;
+} StrPtrL;
+
+#define STRPTRL(a) {(uint8_t *)&a[0], sizeof(a)}
+
+StrPtrL const ReportDescriptor[] = {
+    STRPTRL(report_desc_HID0),
+    STRPTRL(report_desc_HID1)
+};
+
 uint8_t const report_desc_HID0[]=
 {
     0x05, 0x01,                        // Usage Page (Generic Desktop)
@@ -266,6 +281,7 @@ uint8_t const report_desc_HID1[]=
     0xc0    // end Application Collection
 
 };
+
 
 
 #endif // __USB_DESCRIPTOR__

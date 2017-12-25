@@ -107,7 +107,6 @@ void UsbBusSuspendEventHandler()
  */
 void UsbIsr()
 {
-    printf_tiny("interrupt!\n");
     UsbTransfurEventHandler();
     UsbBusResetEventHandler();
     UsbBusSuspendEventHandler();

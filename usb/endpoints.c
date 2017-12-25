@@ -2,9 +2,12 @@
 #include "CH554_SDCC.h"
 #include "compiler.h"
 
-#include "usb_descriptor.h"
+// #include "usb_descriptor.h"
+#include "descriptor.h"
+
 
 #include <string.h>
+#include <stdio.h>
 
 #define THIS_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
 
@@ -14,8 +17,8 @@ static uint8_t __xdata HIDKey[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 static uint8_t __xdata HIDMouse[8] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
 static uint8_t __xdata Ep0Buffer[THIS_ENDP0_SIZE+2 >= MAX_PACKET_SIZE ? MAX_PACKET_SIZE : THIS_ENDP0_SIZE+2];    //端点0 OUT&IN缓冲区，必须是偶地址
-static uint8_t __xdata Ep1Buffer[MAX_PACKET_SIZE];  //端点1 IN缓冲区,必须是偶地址
-static uint8_t __xdata Ep2Buffer[2*MAX_PACKET_SIZE];  //端点2 IN缓冲区,必须是偶地址
+static uint8_t __xdata Ep1Buffer[2*MAX_PACKET_SIZE];  //端点1 IN缓冲区,必须是偶地址
+static uint8_t __xdata Ep2Buffer[MAX_PACKET_SIZE];  //端点2 IN缓冲区,必须是偶地址
 
 uint8_t SetupReq,SetupLen,Ready,Count,FLAG,UsbConfig;
 uint8_t *pDescr;
@@ -27,47 +30,16 @@ USB_SETUP_REQ   SetupReqBuf;                                                   /
 void nop(){}
 
 
-/** \brief 获取文本描述符
- *
- * \param order uint8_t 文本描述符顺序
- * \param strPtor uint8_t** 输出文本指针的指针
- * \return uint8_t 文本描述符长度
- *
- */
-uint8_t getStringDescriptor(uint8_t order, uint8_t ** strPtor)
-{
-    uint8_t header = 0, strlen = 0;
-    do
-    {
-        header += strlen;
-        if(header >= sizeof(StringDescriptor)) // 超过长度就直接返回
-        {
-            return 0xFF;
-        }
-        strlen = StringDescriptor[header];
-    }
-    while(order--);
-
-    *strPtor = (uint8_t *)&StringDescriptor[header];
-    return strlen;
-}
-
 
 void EP0_OUT()
 {
     len = USB_RX_LEN;
     switch (SetupReq)
     {
+        // 既可以从EP0端点的SET_CONFIGURATION获取下传的报告值
+        // 也可以从EPn的OUT输出获取下传的报告值
         case USB_SET_CONFIGURATION:
         {
-            if(Ep0Buffer[0])
-            {
-                // printf("Light on Num Lock LED!\n");
-            }
-            else if(Ep0Buffer[0] == 0)
-            {
-                // printf("Light off Num Lock LED!\n");
-            }
             UEP0_CTRL ^= bUEP_R_TOG;                                     //同步标志位翻转
             break;
         }
@@ -137,40 +109,7 @@ void EP0_SETUP()
             switch(SetupReq)                                        //请求码
             {
                 case USB_GET_DESCRIPTOR:
-                    switch(UsbSetupBuf->wValueH)
-                    {
-                        case 1:                                             // 设备描述符
-                            pDescr = (uint8_t *)&DeviceDescriptor[0];                               //把设备描述符送到要发送的缓冲区
-                            len = sizeof(DeviceDescriptor);
-                            break;
-                        case 2:                                             // 配置描述符
-                            pDescr = (uint8_t *)&ConfigDescriptor[0];                               //把设备描述符送到要发送的缓冲区
-                            len = sizeof(ConfigDescriptor);
-                            break;
-                        case 3:                                             // 字符串描述符
-                            len = getStringDescriptor(UsbSetupBuf->wValueL, &pDescr);
-                            break;
-                        case 0x22:                                          //报表描述符
-                            if(UsbSetupBuf->wIndexL == 0)                   //接口0报表描述符
-                            {
-                                pDescr = (uint8_t *)&report_desc_HID0[0];                        //数据准备上传
-                                len = sizeof(report_desc_HID0);
-                            }
-                            else if(UsbSetupBuf->wIndexL == 1)              //接口1报表描述符
-                            {
-                                pDescr = (uint8_t *)&report_desc_HID1[0];                      //数据准备上传
-                                len = sizeof(report_desc_HID1);
-                                Ready = 1;                                  //如果有更多接口，该标准位应该在最后一个接口配置完成后有效
-                            }
-                            else
-                            {
-                                len = 0xff;                                 //本程序只有2个接口，这句话正常不可能执行
-                            }
-                            break;
-                        default:
-                            len = 0xff;                                     //不支持的命令或者出错
-                            break;
-                    }
+                    Ready = GetUsbDescriptor(UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, &len, &pDescr);
                     if ( SetupLen > len )
                     {
                         SetupLen = len;    //限制总长度
@@ -232,14 +171,16 @@ void EP0_SETUP()
                     {
                         if( ( ( ( uint16_t )UsbSetupBuf->wValueH << 8 ) | UsbSetupBuf->wValueL ) == 0x01 )
                         {
-                            if( ConfigDescriptor[ 7 ] & 0x20 )
+                            /*
+                            if( USB_SUPPORT_REM_WAKE & 0x20 )
                             {
-                                /* 设置唤醒使能标志 */
+                                // 设置唤醒使能标志
                             }
                             else
                             {
-                                len = 0xFF;                                        /* 操作失败 */
+                                len = 0xFF;                                        // 操作失败
                             }
+                            */
                         }
                         else
                         {
@@ -324,6 +265,8 @@ void EP1_IN()
 }
 void EP1_OUT()
 {
+    uint8_t datalen = USB_RX_LEN;
+    TXD1 = !(Ep1Buffer[0] & 0x02);
 
 }
 
@@ -351,7 +294,7 @@ void USBDeviceInit()
     UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;                                 //OUT事务返回ACK，IN事务返回NAK
 
     UEP1_DMA = (uint16_t)Ep1Buffer;                                            //端点1数据传输地址
-    UEP4_1_MOD = UEP4_1_MOD & ~bUEP1_BUF_MOD | bUEP1_TX_EN;                    //端点1发送使能 64字节缓冲区
+    UEP4_1_MOD = UEP4_1_MOD & ~bUEP1_BUF_MOD | bUEP1_TX_EN | bUEP1_RX_EN;      //端点1发送使能 64字节收发缓冲区
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_T_RES_NAK;                                 //端点1自动翻转同步标志位，IN事务返回NAK
 
     UEP2_DMA = (uint16_t)Ep2Buffer;                                            //端点2数据传输地址
