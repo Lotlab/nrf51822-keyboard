@@ -87,11 +87,9 @@ void EP0_SETUP()
                 switch(SetupReq) //请求码
                 {
                     case USB_GET_DESCRIPTOR:
-                        Ready = GetUsbDescriptor(UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, &len, &pDescr);
-                        if ( SetupLen > len )
-                        {
-                            SetupLen = len;    //限制总长度
-                        }
+                        Ready = GetUsbDescriptor(UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, UsbSetupBuf->wIndexL, &len, &pDescr);
+                        printf_tiny("GetDesc(%x, %x, %x)\n", UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, UsbSetupBuf->wIndexL);
+                        if ( SetupLen > len ) SetupLen = len;    //限制总长度
                         len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;                  //本次传输长度
                         memcpy(Ep0Buffer,pDescr,len);                        //加载上传数据
                         SetupLen -= len;
@@ -165,14 +163,8 @@ void EP0_SETUP()
                                         case 0x82:
                                             UEP2_CTRL = UEP2_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* 设置端点2 IN STALL */
                                             break;
-                                        case 0x02:
-                                            // UEP2_CTRL = UEP2_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;/* 设置端点2 OUT Stall */
-                                            break;
                                         case 0x81:
                                             UEP1_CTRL = UEP1_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* 设置端点1 IN STALL */
-                                            break;
-                                        case 0x01:
-                                            // UEP1_CTRL = UEP1_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;/* 设置端点1 OUT Stall */
                                             break;
                                         default:
                                             len = 0xFF;                               //操作失败

@@ -12,6 +12,7 @@
 
 
 uint8_t static __xdata HIDKey[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t static __xdata Upload[] = {0x00, 0x00};
 
 /** \brief CH554软复位
  *
@@ -60,15 +61,13 @@ void Enp1IntIn()
 
 /** \brief USB设备模式端点2的中断上传
 */
-/*
+
 void Enp2IntIn()
 {
-    memcpy( Ep2Buffer, HIDData, sizeof(HIDData));                           //加载上传数据
-    UEP2_T_LEN = sizeof(HIDData);                                            //上传数据长度
+    memcpy( &Ep2Buffer[64], Upload, sizeof(Upload));                           //加载上传数据
+    UEP2_T_LEN = 8;                                                           //上传数据长度
     UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;                 //有数据时上传数据并应答ACK
 }
-*/
-
 
 void main()
 {
@@ -115,6 +114,9 @@ void main()
             while(!SendFinish);
             HIDKey[2] = 0x00;
             Enp1IntIn();
+            while(!SendFinish);
+            memcpy(&Upload[0], &touchData, sizeof(touchData));
+            Enp2IntIn();
 
             while(GetTouchData(2)<0x400)DelayMs(2);
         }

@@ -36,7 +36,7 @@ uint8_t getStringDescriptor(uint8_t order, uint8_t ** strPtor)
  * \return uint8_t 是否为最后一个描述符
  *
  */
-uint8_t GetUsbDescriptor(uint8_t type1, uint8_t type2, uint8_t * len, uint8_t ** strPtr)
+uint8_t GetUsbDescriptor(uint8_t type1, uint8_t type2, uint8_t index, uint8_t * len, uint8_t ** strPtr)
 {
     printf_tiny("getDesc:%x, %x\n", type1, type2);
     switch(type1)
@@ -57,12 +57,12 @@ uint8_t GetUsbDescriptor(uint8_t type1, uint8_t type2, uint8_t * len, uint8_t **
             break;
         /**< HID 报告描述符 */
         case 0x22:
-            if(type2 < sizeof(ReportDescriptor))
+            if(index < sizeof(ReportDescriptor))
             {
-                *strPtr = ReportDescriptor[type2].pointer;
-                *len = ReportDescriptor[type2].length;
+                *strPtr = ReportDescriptor[index].pointer;
+                *len = ReportDescriptor[index].length;
 
-                if(type2 == sizeof(ReportDescriptor) - 1)
+                if(index == sizeof(ReportDescriptor) - 1)
                 {
                     return 1; // 设备准备就绪
                 }
