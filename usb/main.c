@@ -64,8 +64,10 @@ void Enp1IntIn()
 
 void Enp2IntIn()
 {
-    memcpy( &Ep2Buffer[64], Upload, sizeof(Upload));                           //加载上传数据
-    UEP2_T_LEN = 8;                                                           //上传数据长度
+    Ep2Buffer[64] = 0x3F;
+    Ep2Buffer[65] = 0x02;
+    memcpy( &Ep2Buffer[64+2], Upload, sizeof(Upload));                           //加载上传数据
+    UEP2_T_LEN = 64;                                                           //上传数据长度
     UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;                 //有数据时上传数据并应答ACK
 }
 
@@ -107,7 +109,8 @@ void main()
         touchData = GetTouchData(2);
         if(touchData < 0x400 )
         {
-            LED = !LED;
+            LED = 0;
+            /*
             SendFinish = 0;
             HIDKey[2] = 0x04;
             Enp1IntIn();
@@ -115,12 +118,16 @@ void main()
             HIDKey[2] = 0x00;
             Enp1IntIn();
             while(!SendFinish);
+            */
+
             memcpy(&Upload[0], &touchData, sizeof(touchData));
             Enp2IntIn();
 
             while(GetTouchData(2)<0x400)DelayMs(2);
+
+            LED = 1;
         }
 
-        DelayMs(20);
+        DelayMs(50);
     }
 }

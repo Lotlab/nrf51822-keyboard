@@ -32,7 +32,7 @@ void PrintHex(uint8_t * data, uint8_t len)
 {
     for(int i=0;i<len;i++)
     {
-        printf_tiny("%02x", data[i]);
+        printf_tiny("%x ", data[i]);
     }
 }
 
@@ -267,6 +267,7 @@ void EP0_SETUP()
 
 void EP1_IN()
 {
+    printf_tiny("EP1_IN\n");
     UEP1_T_LEN = 0;                                                     //预使用发送长度一定要清空
 //  UEP2_CTRL ^= bUEP_T_TOG;                                            //如果不设置自动翻转则需要手动翻转
     UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
@@ -283,6 +284,7 @@ void EP1_OUT()
 
 void EP2_IN()
 {
+    printf_tiny("EP2_IN\n");
     UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
 //  UEP1_CTRL ^= bUEP_T_TOG;                                            //如果不设置自动翻转则需要手动翻转
     UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
