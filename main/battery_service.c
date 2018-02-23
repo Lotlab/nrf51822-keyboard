@@ -199,7 +199,7 @@ void ADC_IRQHandler()
 {
     nrf_adc_conversion_event_clean();
     nrf_adc_stop();
-    app_sched_event_put(NULL, NULL, ADC_appsh_mes_evt_handler);
+    app_sched_event_put(NULL, 0, ADC_appsh_mes_evt_handler);
 }
 
 /** BLE电量服务事件处理 */

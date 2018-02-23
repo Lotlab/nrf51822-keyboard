@@ -1,0 +1,10 @@
+ifeq ($(findstring 86, $(ProgramFiles)), )
+	PROGFILES := C:/Program Files
+else
+	PROGFILES := C:/Program Files (x86)
+endif
+
+GNU_INSTALL_ROOT := H:/Program Files (x86)/GNU Tools ARM Embedded/5.4 2016q3
+GNU_VERSION := 4.9.3
+GNU_PREFIX := arm-none-eabi
+

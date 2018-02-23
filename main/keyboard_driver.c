@@ -184,7 +184,14 @@ static bool keymatrix_read(uint16_t *matrix)
             }
             nrf_gpio_pin_clear((uint32_t)row_pin_array[r]);
 
-            for(int i=0; i<6; i++) __nop(); //防止切换速度过快导致的第一行按键双按的问题
+            for(int i=0; i<6; i++) {
+#ifdef __GNUC__
+                __asm("NOP");
+#else
+                __nop(); //防止切换速度过快导致的第一行按键双按的问题  
+#endif
+
+            } 
         }
         nrf_delay_ms(1);
     }

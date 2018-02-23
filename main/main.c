@@ -886,7 +886,7 @@ static uint32_t buffer_dequeue(bool tx_flag)
 {
     buffer_entry_t *p_element;
     uint32_t err_code = NRF_SUCCESS;
-    uint16_t actual_len;
+    uint16_t actual_len = 0;
 
     if (BUFFER_LIST_EMPTY())
     {
@@ -941,7 +941,7 @@ static uint32_t buffer_dequeue(bool tx_flag)
 static void keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
 {
     uint32_t err_code;
-    uint16_t actual_len;
+    uint16_t actual_len = 0;
 
     err_code = send_key_scan_press_release(&m_hids,
                                            p_key_pattern,
