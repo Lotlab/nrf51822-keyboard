@@ -1,5 +1,6 @@
 #include <string.h>
 #include "main.h"
+#include "keyboard_conf.h"
 #include "battery_service.h"
 
 #include "nrf_adc.h"
