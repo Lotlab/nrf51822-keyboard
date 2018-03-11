@@ -1,6 +1,6 @@
 PROJECT_NAME := ble_app_hids_keyboard_s110_pca10028
 
-export OUTPUT_FILENAME
+OUTPUT_FILENAME := ble4100
 #MAKEFILE_NAME := $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
@@ -57,6 +57,8 @@ $(abspath $(NRFSDK_DIR)/pstorage.c) \
 $(abspath $(SOURCE_DIR)/main.c) \
 $(abspath $(SOURCE_DIR)/keyboard_driver.c) \
 $(abspath $(SOURCE_DIR)/battery_service.c) \
+$(abspath $(SOURCE_DIR)/led.c) \
+$(abspath $(SOURCE_DIR)/hids.c) \
 $(abspath $(NRFSDK_DIR)/ble_advdata.c) \
 $(abspath $(NRFSDK_DIR)/ble_advertising.c) \
 $(abspath $(NRFSDK_DIR)/ble_bas.c) \
@@ -99,11 +101,12 @@ CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DBSP_UART_SUPPORT
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
-CFLAGS += -Wall -Werror -O3
+CFLAGS += -Wall -Werror -Os
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin --short-enums
+CFLAGS += -g
 
 # keep every function in separate section. This will allow linker to dump unused functions
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
@@ -152,7 +155,7 @@ vpath %.s $(ASM_PATHS)
 
 OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS)
 
-nrf51422_xxac_s110: OUTPUT_FILENAME := nrf51422_xxac_s110
+nrf51422_xxac_s110: OUTPUT_FILENAME := ble4100
 nrf51422_xxac_s110: LINKER_SCRIPT=ble_app_hids_keyboard_gcc_nrf51.ld
 nrf51422_xxac_s110: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo Linking target: $(OUTPUT_FILENAME).out
@@ -214,12 +217,12 @@ cleanobj:
 	$(RM) $(BUILD_DIRECTORIES)/*.o
 
 flash: $(MAKECMDGOALS)
-	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/nrf51422_xxac_s110.hex
-	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/nrf51422_xxac_s110.hex -f nrf51  --sectorerase
+	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
+	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex -f nrf51  --sectorerase
 	nrfjprog --reset
 
 ## Flash softdevice
 flash_softdevice:
 	@echo Flashing: s110_nrf51_8.0.0_softdevice.hex
-	nrfjprog --program ../../../../../../components/softdevice/s110/hex/s110_nrf51_8.0.0_softdevice.hex -f nrf51 --chiperase
+	nrfjprog --program $(NRFSDK_DIR)/s110_nrf51_8.0.0_softdevice.hex -f nrf51 --chiperase
 	nrfjprog --reset

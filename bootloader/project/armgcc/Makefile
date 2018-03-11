@@ -105,7 +105,7 @@ CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DBSP_DEFINES_ONLY
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
-CFLAGS += -Wall -Werror -Os
+CFLAGS += -Wall -Werror -O3
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
@@ -158,7 +158,7 @@ vpath %.s $(ASM_PATHS)
 OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS)
 
 nrf51422_xxac: OUTPUT_FILENAME := nrf51422_xxac
-nrf51422_xxac: LINKER_SCRIPT=../../../dfu_gcc_nrf51.ld
+nrf51422_xxac: LINKER_SCRIPT=ble_app_hids_keyboard_gcc_nrf51.ld
 nrf51422_xxac: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo Linking target: $(OUTPUT_FILENAME).out
 	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
