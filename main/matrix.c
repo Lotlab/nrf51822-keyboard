@@ -9,7 +9,7 @@
 #include "debug.h"
 #include "util.h"
 #include "matrix.h"
-
+#include "keyboard_matrix.h"
 #include "wait.h"
 
 #define MATRIX_COLS    14 // !< ???????
@@ -137,5 +137,14 @@ uint8_t matrix_key_count(void)
         count += bitpop16(matrix[i]);
     }
     return count;
+}
+
+void matrix_sleep_prepare(void)
+{
+    // 任意键唤醒，然后再在bootloader或者键盘中处理
+    for (uint8_t i = 0; i < MATRIX_COLS; i++)
+        nrf_gpio_pin_set((uint32_t)row_pin_array[i]);
+    for (uint8_t i = 0; i < MATRIX_ROWS; i++)
+        nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
 }
 

@@ -3,6 +3,7 @@
 #include "host_driver.h"
 
 #include "ble_hid_service.h"
+#include "custom_hook.h"
 
 uint8_t keyboard_leds(void);
 void send_keyboard(report_keyboard_t * report);
@@ -25,6 +26,7 @@ static uint8_t keyboard_leds()
 static void send_keyboard(report_keyboard_t * report)
 {
     hids_keys_send(KEYBOARD_REPORT_SIZE, report->raw);
+    hook_send_keyboard(report);
 }
 static void send_mouse(report_mouse_t * report)
 {

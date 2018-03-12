@@ -1,6 +1,7 @@
 #include "nrf.h"
 #include "main.h"
 #include "timer.h"
+#include "nordic_common.h"
 
 #include "app_scheduler.h"
 #include "app_timer_appsh.h"

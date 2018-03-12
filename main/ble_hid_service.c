@@ -8,6 +8,7 @@
 
 #include "keycode.h"
 #include "main.h"
+#include "ble_services.h"
 
 #define OUTPUT_REPORT_INDEX 0                   /**< Index of Output Report. */
 #define OUTPUT_REPORT_MAX_LEN 1                 /**< Maximum length of Output Report. */
@@ -72,58 +73,6 @@ static ble_hids_t m_hids;                                /**< Structure used to 
 static bool m_in_boot_mode = false;                      /**< Current protocol mode. */
 
 uint8_t led_val;
-
-/** Abstracts buffer element */
-typedef struct hid_key_buffer
-{
-    uint8_t data_offset;    /**< Max Data that can be buffered for all entries */
-    uint8_t data_len;       /**< Total length of data */
-    uint8_t *p_data;        /**< Scanned key pattern */
-    ble_hids_t *p_instance; /**< Identifies peer and service instance */
-} buffer_entry_t;
-
-STATIC_ASSERT(sizeof(buffer_entry_t) % 4 == 0);
-
-
-/** Circular buffer list */
-typedef struct
-{
-    buffer_entry_t buffer[MAX_BUFFER_ENTRIES]; /**< Maximum number of entries that can enqueued in the list */
-    uint8_t rp;                                /**< Index to the read location */
-    uint8_t wp;                                /**< Index to write location */
-    uint8_t count;                             /**< Number of elements in the list */
-} buffer_list_t;
-
-STATIC_ASSERT(sizeof(buffer_list_t) % 4 == 0);
-
-/** 缓存队列访问宏
- *
- * @{ */
-/** Initialization of buffer list */
-#define BUFFER_LIST_INIT()     \
-    do                         \
-    {                          \
-        buffer_list.rp = 0;    \
-        buffer_list.wp = 0;    \
-        buffer_list.count = 0; \
-    } while (0)
-
-/** Provide status of data list is full or not */
-#define BUFFER_LIST_FULL() \
-    ((MAX_BUFFER_ENTRIES == buffer_list.count - 1) ? true : false)
-
-/** Provides status of buffer list is empty or not */
-#define BUFFER_LIST_EMPTY() \
-    ((0 == buffer_list.count) ? true : false)
-
-#define BUFFER_ELEMENT_INIT(i)                 \
-    do                                         \
-    {                                          \
-        buffer_list.buffer[(i)].p_data = NULL; \
-    } while (0)
-
-/** List to enqueue not just data to be sent, but also related information like the handle, connection handle etc */
-static buffer_list_t buffer_list;
 
 static void on_hids_evt(ble_hids_t *p_hids, ble_hids_evt_t *p_evt);
 
@@ -387,138 +336,6 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
     return err_code;
 }
 
-/**@brief   Function for initializing the buffer queue used to key events that could not be
- *          transmitted
- *
- * @warning This handler is an example only. You need to analyze how you wish to buffer or buffer at
- *          all.
- *
- * @note    In case of HID keyboard, a temporary buffering could be employed to handle scenarios
- *          where encryption is not yet enabled or there was a momentary link loss or there were no
- *          Transmit buffers.
- */
-void hids_buffer_init(void)
-{
-    uint32_t buffer_count;
-
-    BUFFER_LIST_INIT();
-
-    for (buffer_count = 0; buffer_count < MAX_BUFFER_ENTRIES; buffer_count++)
-    {
-        BUFFER_ELEMENT_INIT(buffer_count);
-    }
-}
-
-/**@brief Function for enqueuing key scan patterns that could not be transmitted either completely
- *        or partially.
- *
- * @warning This handler is an example only. You need to analyze how you wish to send the key
- *          release.
- *
- * @param[in]  p_hids         Identifies the service for which Key Notifications are buffered.
- * @param[in]  p_key_pattern  Pointer to key pattern.
- * @param[in]  pattern_len    Length of key pattern.
- * @param[in]  offset         Offset applied to Key Pattern when requesting a transmission on
- *                            dequeue, @ref buffer_dequeue.
- * @return     NRF_SUCCESS on success, else an error code indicating reason for failure.
- */
-uint32_t hids_buffer_enqueue(ble_hids_t *p_hids,
-                               uint8_t *p_key_pattern,
-                               uint16_t pattern_len,
-                               uint16_t offset)
-{
-    buffer_entry_t *element;
-    uint32_t err_code = NRF_SUCCESS;
-
-    if (BUFFER_LIST_FULL())
-    {
-        // Element cannot be buffered.
-        err_code = NRF_ERROR_NO_MEM;
-    }
-    else
-    {
-        // Make entry of buffer element and copy data.
-        element = &buffer_list.buffer[(buffer_list.wp)];
-        element->p_instance = p_hids;
-        element->p_data = p_key_pattern;
-        element->data_offset = offset;
-        element->data_len = pattern_len;
-
-        buffer_list.count++;
-        buffer_list.wp++;
-
-        if (buffer_list.wp == MAX_BUFFER_ENTRIES)
-        {
-            buffer_list.wp = 0;
-        }
-    }
-
-    return err_code;
-}
-
-/**@brief   Function to dequeue key scan patterns that could not be transmitted either completely of
- *          partially.
- *
- * @warning This handler is an example only. You need to analyze how you wish to send the key
- *          release.
- *
- * @param[in]  tx_flag   Indicative of whether the dequeue should result in transmission or not.
- * @note       A typical example when all keys are dequeued with transmission is when link is
- *             disconnected.
- *
- * @return     NRF_SUCCESS on success, else an error code indicating reason for failure.
- */
-uint32_t hids_buffer_dequeue(bool tx_flag)
-{ 
-    buffer_entry_t *p_element;
-    uint32_t err_code = NRF_SUCCESS;
-    uint16_t actual_len = 0;
-
-    if (BUFFER_LIST_EMPTY())
-    {
-        err_code = NRF_ERROR_NOT_FOUND;
-    }
-    else
-    {
-        bool remove_element = true;
-
-        p_element = &buffer_list.buffer[(buffer_list.rp)];
-
-        if (tx_flag)
-        {
-            err_code = send_key_scan_press_release(p_element->p_instance,
-                                                   p_element->p_data,
-                                                   p_element->data_len,
-                                                   p_element->data_offset,
-                                                   &actual_len);
-            // An additional notification is needed for release of all keys, therefore check
-            // is for actual_len <= element->data_len and not actual_len < element->data_len
-            if ((err_code == BLE_ERROR_NO_TX_BUFFERS) && (actual_len <= p_element->data_len))
-            {
-                // Transmission could not be completed, do not remove the entry, adjust next data to
-                // be transmitted
-                p_element->data_offset = actual_len;
-                remove_element = false;
-            }
-        }
-
-        if (remove_element)
-        {
-            BUFFER_ELEMENT_INIT(buffer_list.rp);
-
-            buffer_list.rp++;
-            buffer_list.count--;
-
-            if (buffer_list.rp == MAX_BUFFER_ENTRIES)
-            {
-                buffer_list.rp = 0;
-            }
-        }
-    }
-
-    return err_code;
-}
-
 /**@brief Function for sending sample key presses to the peer.
  *
  * @param[in]   key_pattern_len   Pattern length.
@@ -534,17 +351,6 @@ void hids_keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
                                            key_pattern_len,
                                            0,
                                            &actual_len);
-    // An additional notification is needed for release of all keys, therefore check
-    // is for actual_len <= key_pattern_len and not actual_len < key_pattern_len.
-    if ((err_code == BLE_ERROR_NO_TX_BUFFERS) && (actual_len <= key_pattern_len))
-    {
-        // Buffer enqueue routine return value is not intentionally checked.
-        // Rationale: Its better to have a a few keys missing than have a system
-        // reset. Recommendation is to work out most optimal value for
-        // MAX_BUFFER_ENTRIES to minimize chances of buffer queue full condition
-        UNUSED_VARIABLE(hids_buffer_enqueue(&m_hids, p_key_pattern, key_pattern_len, actual_len));
-    }
-
     if ((err_code != NRF_SUCCESS) &&
         (err_code != NRF_ERROR_INVALID_STATE) &&
         (err_code != BLE_ERROR_NO_TX_BUFFERS) &&

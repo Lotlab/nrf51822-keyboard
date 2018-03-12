@@ -15,7 +15,7 @@ void config_pstorage_write(uint8_t addr, uint8_t data);
 void config_pstorage_write_word(uint16_t addr, uint16_t data);
 void config_pstorage_init(void);
 
-void eeconfig_set_default()
+static void eeconfig_set_default()
 {
     config_pstorage_write_word(0,          EECONFIG_MAGIC_NUMBER);
     config_pstorage_write(*EECONFIG_DEBUG,          0);
@@ -27,7 +27,6 @@ void eeconfig_set_default()
 #endif
 
 }
-
 
 bool eeconfig_is_enabled(void)
 {
@@ -96,7 +95,7 @@ void eeconfig_write_backlight(uint8_t val)
 #endif
 
 
-void config_pstorage_callback_handler(pstorage_handle_t *p_handle, uint8_t op_code, uint32_t result, uint8_t *p_data, uint32_t data_len)
+static void config_pstorage_callback_handler(pstorage_handle_t *p_handle, uint8_t op_code, uint32_t result, uint8_t *p_data, uint32_t data_len)
 {
     switch(op_code)  
     {        
@@ -113,7 +112,7 @@ void config_pstorage_callback_handler(pstorage_handle_t *p_handle, uint8_t op_co
     }  
 }
 
-void config_pstorage_init(void)
+static void config_pstorage_init(void)
 {
     //pstorage init in device manager, so do not init here 
     
@@ -132,19 +131,19 @@ void config_pstorage_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-void config_pstorage_write(uint8_t addr, uint8_t data)
+static void config_pstorage_write(uint8_t addr, uint8_t data)
 {
     uint32_t err_code = pstorage_store(&block_handle, &data, 1, addr);
     APP_ERROR_CHECK(err_code);
 }
 
-void config_pstorage_write_word(uint16_t addr, uint16_t data)
+static void config_pstorage_write_word(uint16_t addr, uint16_t data)
 {
     uint32_t err_code = pstorage_store(&block_handle, (uint8_t *)&data, sizeof(data), addr);
     APP_ERROR_CHECK(err_code);
 }
 
-uint8_t config_pstorage_read(uint8_t addr)
+static uint8_t config_pstorage_read(uint8_t addr)
 {
     uint8_t data;
 
@@ -154,7 +153,7 @@ uint8_t config_pstorage_read(uint8_t addr)
     return data;
 }
 
-uint16_t config_pstorage_read_word(uint16_t addr)
+static uint16_t config_pstorage_read_word(uint16_t addr)
 {
     uint16_t data;
 
