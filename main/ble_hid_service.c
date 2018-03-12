@@ -1,13 +1,12 @@
 #include <stdint.h>
 #include <string.h>
-#include "hids.h"
+#include "ble_hid_service.h"
 
 #include "ble_hids.h"
 #include "app_error.h"
 #include "device_manager.h"
 
 #include "keycode.h"
-#include "led.h"
 #include "main.h"
 
 #define OUTPUT_REPORT_INDEX 0                   /**< Index of Output Report. */
@@ -71,6 +70,8 @@ static uint8_t report_map_data[] =
 
 static ble_hids_t m_hids;                                /**< Structure used to identify the HID service. */
 static bool m_in_boot_mode = false;                      /**< Current protocol mode. */
+
+uint8_t led_val;
 
 /** Abstracts buffer element */
 typedef struct hid_key_buffer
@@ -228,7 +229,7 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
                                              &report_val);
             APP_ERROR_CHECK(err_code);
 
-            led_change_handler(report_val, true);
+            led_val = report_val;
             // The report received is not supported by this application. Do nothing.
         }
     }
@@ -357,13 +358,13 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
         switch (p_key_pattern[i])
         {
         case KC_NUMLOCK:
-            led_change_handler(0x01, false);
+            led_val ^= 0x01;
             break;
         case KC_CAPSLOCK:
-            led_change_handler(0x02, false);
+            led_val ^= 0x02;
             break;
         case KC_SCROLLLOCK:
-            led_change_handler(0x04, false);
+            led_val ^= 0x04;
             break;
         default:
             break;

@@ -16,7 +16,7 @@
 #include "keyboard_driver.h"
 #include "nrf.h"
 #include "nrf_gpio.h"
-#include "keymap.h"
+#include "keymap_custom.h"
 #include "nrf_delay.h"
 
 #define MODIFIER_HID_START 0xE0
@@ -116,7 +116,7 @@ bool new_packet(const uint8_t **p_key_packet, uint8_t *p_key_packet_size)
 }
 
 static void matrix_to_keycode(uint16_t *matrix, uint8_t *pressed_keys, uint8_t *number_of_pressed_keys)
-{
+{/*
     uint8_t press_normal[CHERRY8x16_MAX_NUM_OF_PRESSED_KEYS], press_fn[CHERRY8x16_MAX_NUM_OF_PRESSED_KEYS];
     uint_fast8_t count = 0;
     bool fn = false;
@@ -160,6 +160,7 @@ static void matrix_to_keycode(uint16_t *matrix, uint8_t *pressed_keys, uint8_t *
             (*number_of_pressed_keys)++;
         }
     }
+		*/
 }
 
 /** 读取按键阵列 */

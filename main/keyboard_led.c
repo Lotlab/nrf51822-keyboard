@@ -1,7 +1,8 @@
-#include "led.h"
+#include "keyboard_led.h"
 #include "keyboard_conf.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "led.h"
 
 bool m_led_state[3] = {false};                    /**< LED State. */
 
@@ -38,6 +39,11 @@ void led_notice(uint8_t num, uint8_t type)
             nrf_delay_ms(100);
         break; 
     }
+}
+
+void led_set(uint8_t usb_led)
+{
+		led_change_handler(usb_led, true);
 }
 
 // val: 灯光值

@@ -26,6 +26,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdbool.h>
 #include "keycode.h"
+#include "action.h"
+#include "action_macro.h"
+#include "keymap.h"
 
 
 /* 4100/4125 keymap definition macro
@@ -54,5 +57,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     { KC_##K50, KC_NO   , KC_NO   , KC_NO   , KC_NO   , KC_NO   , KC_NO   , KC_NO    }, \
     { KC_##K51, KC_NO   , KC_NO   , KC_NO   , KC_NO   , KC_NO   , KC_NO   , KC_NO    }  \
 }
+
+
+
 
 #endif

@@ -10,6 +10,7 @@
       <TargetName>nrf51422_xxac_s110</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pArmCC>5060422::V5.06 update 4 (build 422)::ARMCC</pArmCC>
       <pCCUsed>5060422::V5.06 update 4 (build 422)::ARMCC</pCCUsed>
       <TargetOption>
         <TargetCommonOption>
@@ -310,7 +311,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>4</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -332,10 +333,10 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls></MiscControls>
-              <Define>BLE_STACK_SUPPORT_REQD S110 BOARD_PCA10028 BSP_UART_SUPPORT SOFTDEVICE_PRESENT NRF51 SWI_DISABLE0 BLE_DFU_APP_SUPPORT</Define>
+              <MiscControls>--gnu</MiscControls>
+              <Define>BLE_STACK_SUPPORT_REQD S110 BOARD_PCA10028 BSP_UART_SUPPORT SOFTDEVICE_PRESENT NRF51 SWI_DISABLE0 BLE_DFU_APP_SUPPORT NO_PRINT BOOTMAGIC_ENABLE EXTRAKEY_ENABLE USB_6KRO_ENABLE MATRIX_ROWS=8 MATRIX_COLS=14</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\config;..\..\..\sdk</IncludePath>
+              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk_core\common;..\..\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -545,14 +546,39 @@
               </FileOption>
             </File>
             <File>
-              <FileName>hids.c</FileName>
+              <FileName>ble_hid_service.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\hids.c</FilePath>
+              <FilePath>..\..\ble_hid_service.c</FilePath>
             </File>
             <File>
-              <FileName>led.c</FileName>
+              <FileName>matrix.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\led.c</FilePath>
+              <FilePath>..\..\matrix.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>keymap_plain.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keymap_plain.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>host_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\host_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\storage.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2058,6 +2084,149 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>tmk_core</GroupName>
+          <GroupOption>
+            <CommonProperty>
+              <UseCPPCompiler>0</UseCPPCompiler>
+              <RVCTCodeConst>0</RVCTCodeConst>
+              <RVCTZI>0</RVCTZI>
+              <RVCTOtherData>0</RVCTOtherData>
+              <ModuleSelection>0</ModuleSelection>
+              <IncludeInBuild>2</IncludeInBuild>
+              <AlwaysBuild>2</AlwaysBuild>
+              <GenerateAssemblyFile>2</GenerateAssemblyFile>
+              <AssembleAssemblyFile>2</AssembleAssemblyFile>
+              <PublicsOnly>2</PublicsOnly>
+              <StopOnExitCode>11</StopOnExitCode>
+              <CustomArgument></CustomArgument>
+              <IncludeLibraryModules></IncludeLibraryModules>
+              <ComprImg>1</ComprImg>
+            </CommonProperty>
+            <GroupArmAds>
+              <Cads>
+                <interw>2</interw>
+                <Optim>0</Optim>
+                <oTime>2</oTime>
+                <SplitLS>2</SplitLS>
+                <OneElfS>2</OneElfS>
+                <Strict>2</Strict>
+                <EnumInt>2</EnumInt>
+                <PlainCh>2</PlainCh>
+                <Ropi>2</Ropi>
+                <Rwpi>2</Rwpi>
+                <wLevel>0</wLevel>
+                <uThumb>2</uThumb>
+                <uSurpInc>2</uSurpInc>
+                <uC99>2</uC99>
+                <useXO>2</useXO>
+                <v6Lang>0</v6Lang>
+                <v6LangP>0</v6LangP>
+                <vShortEn>2</vShortEn>
+                <vShortWch>2</vShortWch>
+                <v6Lto>2</v6Lto>
+                <v6WtE>2</v6WtE>
+                <v6Rtti>2</v6Rtti>
+                <VariousControls>
+                  <MiscControls>--gnu</MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath>..\..\..\main</IncludePath>
+                </VariousControls>
+              </Cads>
+              <Aads>
+                <interw>2</interw>
+                <Ropi>2</Ropi>
+                <Rwpi>2</Rwpi>
+                <thumb>2</thumb>
+                <SplitLS>2</SplitLS>
+                <SwStkChk>2</SwStkChk>
+                <NoWarn>2</NoWarn>
+                <uSurpInc>2</uSurpInc>
+                <useXO>2</useXO>
+                <uClangAs>2</uClangAs>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
+              </Aads>
+            </GroupArmAds>
+          </GroupOption>
+          <Files>
+            <File>
+              <FileName>action.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_layer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_layer.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_macro.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_macro.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_tapping.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_tapping.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_util.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_util.c</FilePath>
+            </File>
+            <File>
+              <FileName>debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>hook.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\hook.c</FilePath>
+            </File>
+            <File>
+              <FileName>host.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\host.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\keyboard.c</FilePath>
+            </File>
+            <File>
+              <FileName>matrix.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\matrix.c</FilePath>
+            </File>
+            <File>
+              <FileName>print.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\print.c</FilePath>
+            </File>
+            <File>
+              <FileName>util.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\util.c</FilePath>
+            </File>
+            <File>
+              <FileName>keymap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\keymap.c</FilePath>
+            </File>
+            <File>
+              <FileName>bootmagic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\bootmagic.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2508,14 +2677,39 @@
               <FilePath>..\..\battery_service.c</FilePath>
             </File>
             <File>
-              <FileName>hids.c</FileName>
+              <FileName>ble_hid_service.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\hids.c</FilePath>
+              <FilePath>..\..\ble_hid_service.c</FilePath>
             </File>
             <File>
-              <FileName>led.c</FileName>
+              <FileName>matrix.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\led.c</FilePath>
+              <FilePath>..\..\matrix.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>keymap_plain.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keymap_plain.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>host_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\host_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\storage.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -3821,6 +4015,81 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>tmk_core</GroupName>
+          <Files>
+            <File>
+              <FileName>action.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_layer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_layer.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_macro.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_macro.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_tapping.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_tapping.c</FilePath>
+            </File>
+            <File>
+              <FileName>action_util.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\action_util.c</FilePath>
+            </File>
+            <File>
+              <FileName>debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>hook.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\hook.c</FilePath>
+            </File>
+            <File>
+              <FileName>host.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\host.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\keyboard.c</FilePath>
+            </File>
+            <File>
+              <FileName>matrix.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\matrix.c</FilePath>
+            </File>
+            <File>
+              <FileName>print.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\print.c</FilePath>
+            </File>
+            <File>
+              <FileName>util.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\util.c</FilePath>
+            </File>
+            <File>
+              <FileName>keymap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\keymap.c</FilePath>
+            </File>
+            <File>
+              <FileName>bootmagic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\tmk_core\common\bootmagic.c</FilePath>
             </File>
           </Files>
         </Group>

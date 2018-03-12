@@ -52,8 +52,12 @@
 #include "keycode.h"
 #include "keymap.h"
 #include "battery_service.h"
-#include "led.h"
-#include "hids.h"
+#include "keyboard_led.h"
+#include "ble_hid_service.h"
+#include "keyboard.h"
+
+#include "bootloader_util.h"
+#include "../tmk_core/common/bootloader.h"
 
 #ifdef BLE_DFU_APP_SUPPORT
 #include "ble_dfu.h"
@@ -462,7 +466,6 @@ static void keyboard_sleep_counter_reset(void)
     {
         keyboard_switch_scan_mode(false);
     }
-
     sleep_counter = 0;
 }
 
@@ -474,6 +477,8 @@ static void keyboard_sleep_counter_reset(void)
 static void keyboard_scan_timeout_handler(void *p_context)
 {
     UNUSED_PARAMETER(p_context);
+	keyboard_task();
+	/*
     const uint8_t *key_packet;
     uint8_t key_packet_size;
     if (new_packet(&key_packet, &key_packet_size))
@@ -493,6 +498,7 @@ static void keyboard_scan_timeout_handler(void *p_context)
             hids_keys_send(key_packet_size, (uint8_t *)&key_packet[0]);
         }
     }
+	*/
 }
 
 /**@brief Function for handling a Connection Parameters error.
@@ -540,8 +546,6 @@ static void timers_start(void)
 
     battery_timer_start();
 }
-
-
 
 /**@brief Function for putting the chip into sleep mode.
  *
@@ -858,7 +862,7 @@ static void device_manager_init(bool erase_bonds)
  */
 static void buttons_leds_init(void)
 {
-    cherry8x16_init();
+    keyboard_setup();
     led_init();
 }
 
@@ -895,19 +899,56 @@ int main(void)
     hids_buffer_init();
 
     led_notice(0x00, 0x01);
-
+	keyboard_init();
+	
     // Start execution.
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
     
     led_change_handler(0x01, true);
+
     // Enter main loop.
     for (;;)
     {
         app_sched_execute();
         power_manage();
     }
+}
+
+// see dfu_app_handler.c for more information.
+void bootloader_jump(void)
+{
+    reset_prepare();
+
+    uint32_t err_code = sd_power_gpregret_set(BOOTLOADER_DFU_START);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_softdevice_disable();
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_softdevice_vector_table_base_set(NRF_UICR->BOOTLOADERADDR);
+    APP_ERROR_CHECK(err_code);
+
+    NVIC_ClearPendingIRQ(SWI2_IRQn);
+    
+	      uint32_t interrupt_setting_mask;
+    uint32_t irq;
+
+    // Fetch the current interrupt settings.
+    interrupt_setting_mask = NVIC->ISER[0];
+
+    // Loop from interrupt 0 for disabling of all interrupts.
+    for (irq = 0; irq < 32; irq++)
+    {
+        if (interrupt_setting_mask & (0x01 << irq))
+        {
+            // The interrupt was enabled, hence disable it.
+            NVIC_DisableIRQ((IRQn_Type)irq);
+        }
+    }
+	
+    bootloader_util_app_start(NRF_UICR->BOOTLOADERADDR);
 }
 
 /**
