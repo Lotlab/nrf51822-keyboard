@@ -43,8 +43,8 @@
 #define PNP_ID_PRODUCT_VERSION DEVICE_VER /**< Product Version. */
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
-#define MIN_CONN_INTERVAL MSEC_TO_UNITS(12.5, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
-#define MAX_CONN_INTERVAL MSEC_TO_UNITS(60, UNIT_1_25_MS)   /**< Maximum connection interval (30 ms). */
+#define MIN_CONN_INTERVAL MSEC_TO_UNITS(7.5, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
+#define MAX_CONN_INTERVAL MSEC_TO_UNITS(30, UNIT_1_25_MS)   /**< Maximum connection interval (30 ms). */
 #define SLAVE_LATENCY 6                                     /**< Slave latency. */
 #define CONN_SUP_TIMEOUT MSEC_TO_UNITS(850, UNIT_10_MS)     /**< Connection supervisory timeout (430 ms). */
 
@@ -286,7 +286,7 @@ static void gap_params_init(void)
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
 
-    err_code = sd_ble_gap_tx_power_set(-4);
+    err_code = sd_ble_gap_tx_power_set(0);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -329,7 +329,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     switch (ble_adv_evt)
     {
     case BLE_ADV_EVT_IDLE:
-        sleep_mode_enter();
+        sleep_mode_enter(true);
         break;
 
     case BLE_ADV_EVT_WHITELIST_REQUEST:
@@ -510,10 +510,6 @@ static void device_manager_init(bool erase_bonds)
 
     // Initialize peer device handle.
     err_code = dm_handle_initialize(&m_bonded_peer_handle);
-    APP_ERROR_CHECK(err_code);
-
-    // Initialize persistent storage module.
-    err_code = pstorage_init();
     APP_ERROR_CHECK(err_code);
 
     err_code = dm_init(&init_param);

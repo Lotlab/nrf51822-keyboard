@@ -311,7 +311,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>4</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -334,7 +334,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--gnu</MiscControls>
-              <Define>BLE_STACK_SUPPORT_REQD S110 BOARD_PCA10028 BSP_UART_SUPPORT SOFTDEVICE_PRESENT NRF51 SWI_DISABLE0 BLE_DFU_APP_SUPPORT NO_PRINT BOOTMAGIC_ENABLE EXTRAKEY_ENABLE USB_6KRO_ENABLE MATRIX_ROWS=8 MATRIX_COLS=14</Define>
+              <Define>BLE_STACK_SUPPORT_REQD S110 BOARD_PCA10028 BSP_UART_SUPPORT SOFTDEVICE_PRESENT NRF51 SWI_DISABLE0 BLE_DFU_APP_SUPPORT NO_PRINT BOOTMAGIC_ENABLE EXTRAKEY_ENABLE MATRIX_ROWS=8 MATRIX_COLS=14 MATRIX_HAS_GHOST</Define>
               <Undefine></Undefine>
               <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk_core\common;..\..\</IncludePath>
             </VariousControls>

@@ -1,11 +1,14 @@
+#include "main.h"
 #include "keyboard_led.h"
 #include "keyboard_conf.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
-#include "app_scheduler.h"
+#include "app_timer_appsh.h"
 #include "led.h"
 
 bool m_led_state[3] = {false};                    /**< LED State. */
+bool counting;
+APP_TIMER_DEF(led_off);
 
 /**@brief Notice by Led
  *
@@ -19,19 +22,20 @@ void set_led_num(uint8_t num)
     nrf_gpio_pin_write(LED_SCLK, num & 0x04);
 }
 
-void led_appsh_evt_handler(void *p_event_data, uint16_t event_size)
+/**@brief Notice by Led
+ *
+ * @param[in]   num   led val.
+ * @param[in]   type  flash type;
+ */
+void led_notice(uint8_t num, uint8_t type)
 {
-    uint8_t num = ((uint8_t *)p_event_data)[0];
-    uint8_t type = ((uint8_t *)p_event_data)[1];
-    set_led_num(num);
-    
-    
     switch(type) 
     {
         case 0:
             set_led_num(num);
-            nrf_delay_ms(50);
-            set_led_num(0x00);
+            if(counting) app_timer_stop(led_off);
+            app_timer_start(led_off, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
+            counting = true;
         break;
         case 1:
             set_led_num(0x07);
@@ -40,24 +44,11 @@ void led_appsh_evt_handler(void *p_event_data, uint16_t event_size)
             nrf_delay_ms(100);
         break; 
     }
-    
-}
-
-/**@brief Notice by Led
- *
- * @param[in]   num   led val.
- * @param[in]   type  flash type;
- */
-void led_notice(uint8_t num, uint8_t type)
-{
-    // uint8_t evt_data[2] = {num, type};
-    // app_sched_event_put(&evt_data, sizeof(evt_data), led_appsh_evt_handler);
-    set_led_num(num);
 }
 
 void led_set(uint8_t usb_led)
 {
-		led_change_handler(usb_led, true);
+	led_change_handler(usb_led, true);
 }
 
 // val: 灯光值
@@ -77,10 +68,16 @@ void led_change_handler(uint8_t val, uint8_t all)
     for(uint8_t i=0; i<3; i++) // 更新暂存状态
         m_led_state[i] = val & 1 << i;
 }
+void led_turnoff(void * p_context)
+{
+    set_led_num(0x00);
+    counting = false;
+}
 
 void led_init(void)
 {
     nrf_gpio_cfg_output(LED_NUM);
     nrf_gpio_cfg_output(LED_CAPS);
     nrf_gpio_cfg_output(LED_SCLK);
+    app_timer_create(&led_off, APP_TIMER_MODE_SINGLE_SHOT, led_turnoff);
 }

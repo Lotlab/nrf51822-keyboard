@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_COLS 14
 
 /* define if matrix has ghost */
+// WTM 这个也不会自动include
 #define MATRIX_HAS_GHOST
 
 /* Set 0 if debouncing isn't needed */

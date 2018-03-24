@@ -7,7 +7,7 @@ void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
     switch(id)
     {
         case POWER_SLEEP:
-            sleep_mode_enter();
+            sleep_mode_enter(true);
         break;
         case POWER_ON:
             

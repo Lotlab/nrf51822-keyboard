@@ -54,12 +54,18 @@
 #include "hook.h"
 #include "custom_hook.h"
 #include "keyboard_host_driver.h"
+#include "bootmagic.h"
+#include "eeconfig.h"
+
+
+#define BOOTMAGIC_KEY_BOOT              KC_U /* boot! */
+#define BOOTMAGIC_KEY_ERASE_BOND        KC_E /* erase bond info */
 
 #define SLEEP_SLOW_TIMEOUT 60 // 60秒后转入慢速扫描模式
 #define SLEEP_OFF_TIMEOUT 600 // 10分钟之后自动关机
 
-#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(5, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
-#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(20, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(10, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(50, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
 #define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)                /**< 键盘Tick计时器 */
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
@@ -70,10 +76,6 @@
 
 APP_TIMER_DEF(m_keyboard_scan_timer_id);
 APP_TIMER_DEF(m_keyboard_sleep_timer_id);
-
-bool lock = false;
-
-void sleep_mode_enter(void);
 
 static uint8_t passkey_enter_index = 0;
 static uint8_t passkey_entered[6];
@@ -197,7 +199,7 @@ static void keyboard_sleep_timeout_handler(void *p_context)
     }
     else if (sleep_timer_counter == SLEEP_OFF_TIMEOUT)
     {
-        sleep_mode_enter();
+        sleep_mode_enter(true);
     }
 }
 
@@ -231,6 +233,24 @@ void hook_send_keyboard(report_keyboard_t * report)
     keyboard_conn_pass_enter_handler(report->keys, sizeof(report->keys));
 }
 
+void hook_bootmagic()
+{
+    bool erase_bond = false;
+    if(!bootmagic_scan_key(BOOTMAGIC_KEY_BOOT))
+    {
+        // Yes, 如果没有按下Space+U，那就不开机。
+        sleep_mode_enter(false);
+    }
+    if(bootmagic_scan_key(BOOTMAGIC_KEY_ERASE_BOND))
+    {
+        // 按下Space+E，删除所有的绑定信息
+        erase_bond = true;
+    }
+    ble_services_init(erase_bond);
+    
+    // 真正的初始化，查看storage.c获取更多信息
+    eeconfig_init();
+}
 
 /**@brief 计时器启动函数
  */
@@ -251,12 +271,12 @@ static void timers_start(void)
  *
  * @note This function will not return.
  */
-void sleep_mode_enter(void)
+void sleep_mode_enter(bool notice)
 {
     uint32_t err_code;
 
+    if(notice)led_notice(0x00, 0x01);
     matrix_sleep_prepare();
-    led_notice(0x00, 0x01);
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
     err_code = sd_power_system_off();
@@ -355,7 +375,6 @@ static void power_manage(void)
 int main(void)
 {
     uint32_t err_code;
-    _Bool erase_bond = false;
 
     // Initialize.
     app_trace_init();
@@ -363,16 +382,17 @@ int main(void)
     buttons_leds_init();
     ble_stack_init();
     scheduler_init();
-
-    // erase_bond = cherry8x16_getch(KC_2);
-
-    ble_services_init(erase_bond);
+    
+    // Initialize persistent storage module before the keyboard.
+    err_code = pstorage_init();
+    APP_ERROR_CHECK(err_code);
+    
+	keyboard_init();
     services_init();
     battery_service_init();
 
+    // set driver after all module inited.
     host_set_driver(&driver);
-	keyboard_init();
-	
     // Start execution.
     timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
