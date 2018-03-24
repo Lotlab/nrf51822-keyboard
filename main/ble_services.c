@@ -462,7 +462,7 @@ static void advertising_init(void)
 
     ble_adv_modes_config_t options =
         {
-            BLE_ADV_WHITELIST_ENABLED,
+            BLE_ADV_WHITELIST_DISABLED,
             BLE_ADV_DIRECTED_ENABLED,
             BLE_ADV_DIRECTED_SLOW_DISABLED, 0, 0,
             BLE_ADV_FAST_ENABLED, APP_ADV_FAST_INTERVAL, APP_ADV_FAST_TIMEOUT,

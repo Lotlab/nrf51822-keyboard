@@ -13,7 +13,7 @@ void config_write(void);
 void config_read(void);
 void config_update(void);
 
-static uint8_t config_buffer[8] = {EECONFIG_MAGIC_NUMBER>>8, EECONFIG_MAGIC_NUMBER % 0x100 , 0,0,0,0,0,0};
+static uint8_t config_buffer[8] __attribute__ ((aligned (4))) = {EECONFIG_MAGIC_NUMBER>>8, EECONFIG_MAGIC_NUMBER % 0x100 , 0,0,0,0,0,0}; 
 
 static void eeconfig_set_default()
 {
