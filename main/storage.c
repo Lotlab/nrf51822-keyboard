@@ -8,24 +8,24 @@ bool isInit = false;
 pstorage_handle_t       pstorage_base_block_id;
 pstorage_handle_t       block_handle;
 
-uint8_t config_pstorage_read(uint8_t addr);
-uint16_t config_pstorage_read_word(uint16_t addr);
-
-void config_pstorage_write(uint8_t addr, uint8_t data);
-void config_pstorage_write_word(uint16_t addr, uint16_t data);
 void config_pstorage_init(void);
+void config_write(void);
+void config_read(void);
+void config_update(void);
+
+static uint8_t config_buffer[8] = {EECONFIG_MAGIC_NUMBER>>8, EECONFIG_MAGIC_NUMBER % 0x100 , 0,0,0,0,0,0};
 
 static void eeconfig_set_default()
 {
-    config_pstorage_write_word(0,          EECONFIG_MAGIC_NUMBER);
-    config_pstorage_write(*EECONFIG_DEBUG,          0);
-    config_pstorage_write(*EECONFIG_DEFAULT_LAYER,  0);
-    config_pstorage_write(*EECONFIG_KEYMAP,         0);
-    config_pstorage_write(*EECONFIG_MOUSEKEY_ACCEL, 0);
+    config_buffer[0] = EECONFIG_MAGIC_NUMBER >> 8;
+    config_buffer[1] = EECONFIG_MAGIC_NUMBER % 0x100;
+    config_buffer[*EECONFIG_DEBUG] = 0;
+    config_buffer[*EECONFIG_DEFAULT_LAYER] = 0;
+    config_buffer[*EECONFIG_KEYMAP] = 0;
+    config_buffer[*EECONFIG_MOUSEKEY_ACCEL] = 0;
 #ifdef BACKLIGHT_ENABLE
-    config_pstorage_write(EECONFIG_BACKLIGHT,      0);
+    config_buffer[*EECONFIG_BACKLIGHT] = 0;
 #endif
-
 }
 
 bool eeconfig_is_enabled(void)
@@ -38,6 +38,7 @@ void eeconfig_init(void)
     if(isInit)
     {
         eeconfig_set_default();
+        config_update();
     }
     else
     {
@@ -56,60 +57,85 @@ void eeconfig_disable(void)
 
 uint8_t eeconfig_read_debug(void)
 {
-    return config_pstorage_read(*EECONFIG_DEBUG);
+    return config_buffer[*EECONFIG_DEBUG];
 }
 
 void eeconfig_write_debug(uint8_t val)
 {
-    config_pstorage_write(*EECONFIG_DEBUG, val);    
+    config_buffer[*EECONFIG_DEBUG] = val;    
+    config_update();
 }
 
 uint8_t eeconfig_read_default_layer(void)
 {
-    return config_pstorage_read(*EECONFIG_DEFAULT_LAYER);
+    return config_buffer[*EECONFIG_DEFAULT_LAYER];
 }
 
 void eeconfig_write_default_layer(uint8_t val)
 {
-    config_pstorage_write(*EECONFIG_DEFAULT_LAYER, val);    
+    config_buffer[*EECONFIG_DEFAULT_LAYER] = val;    
+    config_update();
 }
 
 uint8_t eeconfig_read_keymap(void)
 {
-    return config_pstorage_read(*EECONFIG_KEYMAP);
+    return config_buffer[*EECONFIG_KEYMAP];
 }
 void eeconfig_write_keymap(uint8_t val)
 {
-    config_pstorage_write(*EECONFIG_KEYMAP, val);
+    config_buffer[*EECONFIG_KEYMAP] = val;
+    config_update();
 }
 
 #ifdef BACKLIGHT_ENABLE
 uint8_t eeconfig_read_backlight(void)
 {
-    return config_pstorage_read(*EECONFIG_BACKLIGHT);
+    return config_buffer[*EECONFIG_BACKLIGHT];
 }
 void eeconfig_write_backlight(uint8_t val)
 {
-    config_pstorage_write(*EECONFIG_BACKLIGHT, val);
+    config_buffer[*EECONFIG_BACKLIGHT] = val;
+    config_update();
 }
 #endif
 
 
 static void config_pstorage_callback_handler(pstorage_handle_t *p_handle, uint8_t op_code, uint32_t result, uint8_t *p_data, uint32_t data_len)
 {
-    switch(op_code)  
-    {        
-       case PSTORAGE_UPDATE_OP_CODE:  
-           if (result == NRF_SUCCESS)  
-           {  
-               //my_flag = 1; //?flash update???????? Main???????flash???  
-           }  
-           else  
-           {  
-               // Update operation failed.  
-           }  
-           break;  
-    }  
+    switch(op_code)
+    {
+        case PSTORAGE_LOAD_OP_CODE:
+           if (result == NRF_SUCCESS)
+           {
+               // Store operation successful.
+           }
+           else
+           {
+               // Store operation failed.
+           }
+           // Source memory can now be reused or freed.
+           break;       
+        case PSTORAGE_UPDATE_OP_CODE:
+           if (result == NRF_SUCCESS)
+           {
+               // Update operation successful.
+           }
+           else
+           {
+               // Update operation failed.
+           }
+           break;
+       case PSTORAGE_CLEAR_OP_CODE:
+           if (result == NRF_SUCCESS)
+           {
+               // Clear operation successful.
+           }
+           else
+           {
+               // Clear operation failed.
+           }
+           break;
+    }
 }
 
 static void config_pstorage_init(void)
@@ -129,38 +155,42 @@ static void config_pstorage_init(void)
     
     err_code = pstorage_block_identifier_get(&pstorage_base_block_id, 0, &block_handle);
     APP_ERROR_CHECK(err_code);
+    
+    config_read();
+    if(config_buffer[0] != EECONFIG_MAGIC_NUMBER>>8 || config_buffer[1] != EECONFIG_MAGIC_NUMBER % 0x100)
+    {
+        eeconfig_set_default();
+        config_write();
+    }
 }
 
-static void config_pstorage_write(uint8_t addr, uint8_t data)
+static void config_pstorage_write(uint8_t addr, uint8_t* data, uint8_t len)
 {
-    uint32_t err_code = pstorage_store(&block_handle, &data, 1, addr);
+    uint32_t err_code = pstorage_store(&block_handle, data, len, addr);
     APP_ERROR_CHECK(err_code);
 }
 
-static void config_pstorage_write_word(uint16_t addr, uint16_t data)
+static void config_pstorage_read(uint8_t addr, uint8_t* data, uint8_t len)
 {
-    uint32_t err_code = pstorage_store(&block_handle, (uint8_t *)&data, sizeof(data), addr);
+    uint32_t err_code = pstorage_load(data, &block_handle, len, addr);
     APP_ERROR_CHECK(err_code);
 }
 
-static uint8_t config_pstorage_read(uint8_t addr)
+static void config_pstorage_update(uint8_t addr, uint8_t* data, uint8_t len)
 {
-    uint8_t data;
-
-    uint32_t err_code = pstorage_load(&data, &block_handle, 1, addr);
+    uint32_t err_code = pstorage_update(&block_handle, data, len, addr);
     APP_ERROR_CHECK(err_code);
-
-    return data;
 }
 
-static uint16_t config_pstorage_read_word(uint16_t addr)
+static void config_update()
 {
-    uint16_t data;
-
-    uint32_t err_code = pstorage_load((uint8_t *)&data, &block_handle, 2, addr);
-    APP_ERROR_CHECK(err_code);
-
-    return data;
+    config_pstorage_update(0,config_buffer,sizeof(config_buffer));
 }
-
-
+static void config_read()
+{
+    config_pstorage_read(0,config_buffer,sizeof(config_buffer));
+}
+static void config_write()
+{
+    config_pstorage_write(0,config_buffer,sizeof(config_buffer));
+}

@@ -1,6 +1,5 @@
 #include <stdint.h>
-#include "host.h"
-#include "host_driver.h"
+#include "keyboard_host_driver.h"
 
 #include "ble_hid_service.h"
 #include "custom_hook.h"

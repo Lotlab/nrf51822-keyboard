@@ -12,8 +12,14 @@
 #include "keyboard_matrix.h"
 #include "wait.h"
 
-#define MATRIX_COLS    14 // !< ???????
-#define MATRIX_ROWS    8  // !< ???????
+// 由于垃圾Keil的Armcc不支持-I附加include，所以这两个东西在项目设置那里定义。
+// #define MATRIX_COLS    14
+// #define MATRIX_ROWS    8
+
+/** 行IO */
+static const uint8_t row_pin_array[MATRIX_ROWS] = {21,22,23,24,25,26,27,29};
+/** 列IO */
+static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0,30,28};
 
 #ifndef DEBOUNCE
 #   define DEBOUNCE	5
@@ -24,16 +30,11 @@ static uint8_t debouncing = DEBOUNCE;
 static matrix_row_t matrix[MATRIX_ROWS];
 static matrix_row_t matrix_debouncing[MATRIX_ROWS];
 
-/** ?????IO */
-static const uint8_t row_pin_array[MATRIX_ROWS] = {21,22,23,24,25,26,27,29};
-/** ?????IO */
-static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0,30,28};
-
 static matrix_row_t read_cols(void);
 static void select_row(uint8_t row);
 static void unselect_rows(void);
 
-/** ??????? */
+/** 初始化键盘阵列 */
 void matrix_init(void)
 {
     for (uint_fast8_t i = MATRIX_ROWS; i--;)
@@ -76,13 +77,12 @@ static void unselect_rows(void)
 
 static inline void delay_30ns(void)
 {
-		for(int i=0; i<6; i++) {
 #ifdef __GNUC__
-			__asm("NOP");
-#else
-			__nop();
+#define __nop() __asm("NOP")
 #endif
-	  } 
+    for(int i=0; i<2; i++) {
+        __nop();
+    } 
 }
 
 uint8_t matrix_scan(void)
@@ -141,7 +141,7 @@ uint8_t matrix_key_count(void)
 
 void matrix_sleep_prepare(void)
 {
-    // ��������ѣ�Ȼ������bootloader���߼����д���
+    // 这里监听所有按键作为唤醒按键，所以真正的唤醒判断应该在main的初始化过程中
     for (uint8_t i = 0; i < MATRIX_COLS; i++)
         nrf_gpio_pin_set((uint32_t)row_pin_array[i]);
     for (uint8_t i = 0; i < MATRIX_ROWS; i++)

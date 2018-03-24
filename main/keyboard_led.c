@@ -2,6 +2,7 @@
 #include "keyboard_conf.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "app_scheduler.h"
 #include "led.h"
 
 bool m_led_state[3] = {false};                    /**< LED State. */
@@ -18,13 +19,13 @@ void set_led_num(uint8_t num)
     nrf_gpio_pin_write(LED_SCLK, num & 0x04);
 }
 
-/**@brief Notice by Led
- *
- * @param[in]   num   led val.
- * @param[in]   type  flash type;
- */
-void led_notice(uint8_t num, uint8_t type)
+void led_appsh_evt_handler(void *p_event_data, uint16_t event_size)
 {
+    uint8_t num = ((uint8_t *)p_event_data)[0];
+    uint8_t type = ((uint8_t *)p_event_data)[1];
+    set_led_num(num);
+    
+    
     switch(type) 
     {
         case 0:
@@ -39,6 +40,19 @@ void led_notice(uint8_t num, uint8_t type)
             nrf_delay_ms(100);
         break; 
     }
+    
+}
+
+/**@brief Notice by Led
+ *
+ * @param[in]   num   led val.
+ * @param[in]   type  flash type;
+ */
+void led_notice(uint8_t num, uint8_t type)
+{
+    // uint8_t evt_data[2] = {num, type};
+    // app_sched_event_put(&evt_data, sizeof(evt_data), led_appsh_evt_handler);
+    set_led_num(num);
 }
 
 void led_set(uint8_t usb_led)

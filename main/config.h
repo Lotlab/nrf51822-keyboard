@@ -19,40 +19,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CONFIG_H
 
 
-/* USB Device descriptor parameter */
-#define VENDOR_ID       0xFEED
-#define PRODUCT_ID      0x6060
+/* HID Device descriptor parameter */
+#define VENDOR_ID       0x1915
+#define PRODUCT_ID      0xEEEE
 #define DEVICE_VER      0x0001
-#define MANUFACTURER    geekhack
-#define PRODUCT         GH60
+#define MANUFACTURER    "Lotlab"
+#define PRODUCT         "BLE4100"
 #define DESCRIPTION     t.m.k. keyboard firmware for GH60
 
 /* key matrix size */
-#define MATRIX_ROWS 5
+#define MATRIX_ROWS 8
 #define MATRIX_COLS 14
 
-/* keymap in eeprom */
-#define FN_ACTIONS_COUNT 32
-#define KEYMAPS_COUNT 8
-#define EECONFIG_KEYMAP_IN_EEPROM 19
-
 /* define if matrix has ghost */
-//#define MATRIX_HAS_GHOST
+#define MATRIX_HAS_GHOST
 
 /* Set 0 if debouncing isn't needed */
 #define DEBOUNCE    5
-
-/* number of backlight levels */
-#ifdef BREATHING_LED_ENABLE
-#define BACKLIGHT_LEVELS 8
-#else
-#define BACKLIGHT_LEVELS 3
-#endif
-#define BACKLIGHT_CUSTOM
-#ifdef RGB_LED_ENABLE
-#define CUSTOM_LED_ENABLE
-#endif
-
 
 /* Mechanical locking support. Use KC_LCAP, KC_LNUM or KC_LSCR instead in keymap */
 #define LOCKING_SUPPORT_ENABLE

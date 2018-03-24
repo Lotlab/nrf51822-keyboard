@@ -6,14 +6,14 @@
 #include <stdint.h>
 #include <string.h>
 #include "main.h"
+#include "ble_services.h"
+#include "config.h"
 #include "nordic_common.h"
 #include "nrf.h"
 #include "nrf_assert.h"
 #include "nrf_delay.h"
-
 #include "app_timer.h"
 #include "app_error.h"
-
 #include "ble.h"
 #include "ble_hci.h"
 #include "ble_srv_common.h"
@@ -30,19 +30,17 @@
 #include "../tmk_core/common/bootloader.h"
 
 #ifdef BLE_DFU_APP_SUPPORT
-#include "ble_dfu.h"
-#include "dfu_app_handler.h"
+    #include "ble_dfu.h"
+    #include "dfu_app_handler.h"
 #endif // BLE_DFU_APP_SUPPORT
 
-#include "ble_services.h"
-
-#define DEVICE_NAME "BLE4100"      /**< Name of device. Will be included in the advertising data. */
-#define MANUFACTURER_NAME "Lotlab" /**< Manufacturer. Will be passed to Device Information Service. */
+#define DEVICE_NAME PRODUCT      /**< Name of device. Will be included in the advertising data. */
+#define MANUFACTURER_NAME MANUFACTURER /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define PNP_ID_VENDOR_ID_SOURCE 0x02  /**< Vendor ID Source. */
-#define PNP_ID_VENDOR_ID 0x1915       /**< Vendor ID. */
-#define PNP_ID_PRODUCT_ID 0xEEEE      /**< Product ID. */
-#define PNP_ID_PRODUCT_VERSION 0x0001 /**< Product Version. */
+#define PNP_ID_VENDOR_ID VENDOR_ID       /**< Vendor ID. */
+#define PNP_ID_PRODUCT_ID PRODUCT_ID      /**< Product ID. */
+#define PNP_ID_PRODUCT_VERSION DEVICE_VER /**< Product Version. */
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
 #define MIN_CONN_INTERVAL MSEC_TO_UNITS(12.5, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
@@ -60,30 +58,38 @@
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                                            /**< Number of attempts before giving up the connection parameter negotiation. */
 
 #define SEC_PARAM_BOND 1                                        /**< Perform bonding. */
-#define SEC_PARAM_MITM 1                                        /**< Man In The Middle protection not required. */
+#define SEC_PARAM_MITM 1                                       /**< Man In The Middle protection not required. */
 #define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_KEYBOARD_ONLY /**< No I/O capabilities. */
 #define SEC_PARAM_OOB 0                                         /**< Out Of Band data not available. */
 #define SEC_PARAM_MIN_KEY_SIZE 7                                /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE 16                               /**< Maximum encryption key size. */
 
 #ifdef BLE_DFU_APP_SUPPORT
-#define DFU_REV_MAJOR 0x00                                  /** DFU Major revision number to be exposed. */
-#define DFU_REV_MINOR 0x00                                  /** DFU Minor revision number to be exposed. */
-#define DFU_REVISION ((DFU_REV_MAJOR << 8) | DFU_REV_MINOR) /** DFU Revision number to be exposed. Combined of major and minor versions. */
-#define APP_SERVICE_HANDLE_START 0x000C                     /**< Handle of first application specific service when when service changed characteristic is present. */
-#define BLE_HANDLE_MAX 0xFFFF                               /**< Max handle value in BLE. */
+    #define DFU_REV_MAJOR 0x00                                  /** DFU Major revision number to be exposed. */
+    #define DFU_REV_MINOR 0x00                                  /** DFU Minor revision number to be exposed. */
+    #define DFU_REVISION ((DFU_REV_MAJOR << 8) | DFU_REV_MINOR) /** DFU Revision number to be exposed. Combined of major and minor versions. */
+    #define APP_SERVICE_HANDLE_START 0x000C                     /**< Handle of first application specific service when when service changed characteristic is present. */
+    #define BLE_HANDLE_MAX 0xFFFF                               /**< Max handle value in BLE. */
 
-#define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
+    #define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
 
-STATIC_ASSERT(IS_SRVC_CHANGED_CHARACT_PRESENT); /** When having DFU Service support in application the Service Changed Characteristic should always be present. */
+    STATIC_ASSERT(IS_SRVC_CHANGED_CHARACT_PRESENT); /** When having DFU Service support in application the Service Changed Characteristic should always be present. */
 #endif                                          // BLE_DFU_APP_SUPPORT
-
 
 
 static dm_application_instance_t m_app_handle; /**< Application identifier allocated by device manager. */
 dm_handle_t m_bonded_peer_handle;       /**< Device reference handle to the current bonded central. */
 static uint16_t passkey_conn_handle;
 bool passkey_required = false;
+
+static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
+
+#ifdef BLE_DFU_APP_SUPPORT
+static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}};
+static ble_dfu_t m_dfus; /**< Structure used to identify the DFU service. */
+#else
+static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}};
+#endif // BLE_DFU_APP_SUPPORT
 
 /** @} */
 
@@ -95,15 +101,6 @@ typedef enum {
     BLE_SLOW_ADV,           /**< Slow advertising running. */
     BLE_SLEEP,              /**< Go to system-off. */
 } ble_advertising_mode_t;
-
-static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
-
-#ifdef BLE_DFU_APP_SUPPORT
-static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}};
-static ble_dfu_t m_dfus; /**< Structure used to identify the DFU service. */
-#else
-static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_HUMAN_INTERFACE_DEVICE_SERVICE, BLE_UUID_TYPE_BLE}, {BLE_UUID_BATTERY_SERVICE, BLE_UUID_TYPE_BLE}};
-#endif // BLE_DFU_APP_SUPPORT
 
 
 /**@brief Function for handling a Connection Parameters error.

@@ -530,6 +530,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\ble_services.c</FilePath>
             </File>
+            <File>
+              <FileName>keyboard_fn.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard_fn.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2660,6 +2665,11 @@
               <FileName>ble_services.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\ble_services.c</FilePath>
+            </File>
+            <File>
+              <FileName>keyboard_fn.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard_fn.c</FilePath>
             </File>
           </Files>
         </Group>

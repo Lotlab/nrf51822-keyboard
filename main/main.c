@@ -32,50 +32,53 @@
 #include "nrf.h"
 #include "nrf_assert.h"
 #include "app_error.h"
+#include "app_trace.h"
 #include "ble.h"
 #include "ble_advertising.h"
 #include "softdevice_handler_appsh.h"
 #include "app_scheduler.h"
 #include "app_timer_appsh.h"
 #include "nrf_delay.h"
-#include "app_trace.h"
 #include "pstorage.h"
 
-#include "report.h"
-#include "keyboard_matrix.h"
-#include "keycode.h"
-#include "keymap.h"
+#include "ble_services.h"
 #include "battery_service.h"
-#include "keyboard_led.h"
 #include "ble_hid_service.h"
+
+#include "report.h"
+
+#include "keycode.h"
 #include "keyboard.h"
+#include "keyboard_led.h"
+#include "keyboard_matrix.h"
 #include "hook.h"
 #include "custom_hook.h"
-#include "ble_services.h"
+#include "keyboard_host_driver.h"
 
-#define SLEEP_DEVIDE 10
 #define SLEEP_SLOW_TIMEOUT 60 // 60秒后转入慢速扫描模式
 #define SLEEP_OFF_TIMEOUT 600 // 10分钟之后自动关机
 
-#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(25, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
-#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(100, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
-#define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000 * SLEEP_DEVIDE, APP_TIMER_PRESCALER) /**< Keyboard sleep interval. */
+#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(5, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(20, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
+#define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)                /**< 键盘Tick计时器 */
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
 #define SCHED_MAX_EVENT_DATA_SIZE MAX(APP_TIMER_SCHED_EVT_SIZE, \
                                       BLE_STACK_HANDLER_SCHED_EVT_SIZE) /**< Maximum size of scheduler events. */
-#define SCHED_QUEUE_SIZE 10                                             /**< Maximum number of events in the scheduler queue. */
+#define SCHED_QUEUE_SIZE 0x10                                             /**< Maximum number of events in the scheduler queue. */
 
 APP_TIMER_DEF(m_keyboard_scan_timer_id);
 APP_TIMER_DEF(m_keyboard_sleep_timer_id);
 
+bool lock = false;
+
 void sleep_mode_enter(void);
 
-static uint8_t passkey_enter_index = 0xFF;
+static uint8_t passkey_enter_index = 0;
 static uint8_t passkey_entered[6];
 
-static uint16_t sleep_counter = 0;
+static uint16_t sleep_timer_counter = 0;
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -91,6 +94,7 @@ static uint16_t sleep_counter = 0;
 void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name)
 {
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
+    printf("Line %d: %s", line_num, p_file_name);
 }
 
 /**@brief Function for handling Service errors.
@@ -140,7 +144,7 @@ static void services_init(void)
     hids_init();
 }
 
-bool keyboard_conn_pass_enter_handler(const uint8_t *key_packet, uint8_t key_packet_size)
+bool keyboard_conn_pass_enter_handler(uint8_t *key_packet, uint8_t key_packet_size)
 {
     if (passkey_enter_index < 6 && auth_key_reqired())
     {
@@ -186,12 +190,12 @@ static void keyboard_switch_scan_mode(bool slow)
 
 static void keyboard_sleep_timeout_handler(void *p_context)
 {
-    sleep_counter++;
-    if (sleep_counter == SLEEP_SLOW_TIMEOUT / SLEEP_DEVIDE)
+    sleep_timer_counter++;
+    if (sleep_timer_counter == SLEEP_SLOW_TIMEOUT)
     {
         keyboard_switch_scan_mode(true);
     }
-    else if (sleep_counter == SLEEP_OFF_TIMEOUT / SLEEP_DEVIDE)
+    else if (sleep_timer_counter == SLEEP_OFF_TIMEOUT)
     {
         sleep_mode_enter();
     }
@@ -199,11 +203,11 @@ static void keyboard_sleep_timeout_handler(void *p_context)
 
 static void keyboard_sleep_counter_reset(void)
 {
-    if (sleep_counter >= SLEEP_SLOW_TIMEOUT / SLEEP_DEVIDE)
+    if (sleep_timer_counter >= SLEEP_SLOW_TIMEOUT)
     {
         keyboard_switch_scan_mode(false);
     }
-    sleep_counter = 0;
+    sleep_timer_counter = 0;
 }
 
 /**@brief Function for handling the keyboard scan timer timeout.
@@ -366,7 +370,7 @@ int main(void)
     services_init();
     battery_service_init();
 
-    led_notice(0x00, 0x01);
+    host_set_driver(&driver);
 	keyboard_init();
 	
     // Start execution.

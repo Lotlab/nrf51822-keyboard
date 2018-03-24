@@ -302,7 +302,7 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
     uint32_t err_code;
     
     // 处理按钮灯
-    for (int i = 0; i < pattern_len; i++)
+    for (int i = 2; i < pattern_len; i++)
     {
         switch (p_key_pattern[i])
         {
