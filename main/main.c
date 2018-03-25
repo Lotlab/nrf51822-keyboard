@@ -275,7 +275,8 @@ void sleep_mode_enter(bool notice)
 {
     uint32_t err_code;
 
-    if(notice)led_notice(0x00, 0x01);
+    if(notice)led_notice(0x00, true);
+    else led_notice(0x00, false);
     matrix_sleep_prepare();
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
