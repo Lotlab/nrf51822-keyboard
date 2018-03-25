@@ -298,11 +298,11 @@
               <OCR_RVCT9>
                 <Type>0</Type>
                 <StartAddress>0x20002c00</StartAddress>
-                <Size>0x5380</Size>
+                <Size>0x1380</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
-                <StartAddress>0x20007f80</StartAddress>
+                <StartAddress>0x20003f80</StartAddress>
                 <Size>0x80</Size>
               </OCR_RVCT10>
             </OnChipMemories>

@@ -54,7 +54,7 @@
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 1                                                       /**< Include the service_changed characteristic. For DFU this should normally be the case. */
 
-#define BOOTLOADER_BUTTON               BOOTLOADER_BTN_IPT                                      /**< Button used to enter SW update mode. */
+#define BOOTLOADER_BUTTON               16                                      /**< Button used to enter SW update mode. */
 #define UPDATE_IN_PROGRESS_LED          LED_NUM                                                 /**< Led used to indicate that DFU is active. */
 
 #define APP_TIMER_PRESCALER             0                                                       /**< Value of the RTC1 PRESCALER register. */
@@ -88,7 +88,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 static void leds_init(void)
 {
     nrf_gpio_range_cfg_output(LED_NUM, LED_SCLK);
-    nrf_gpio_pins_set( (1<<LED_NUM) | (1<<LED_CAPS) | (1<<LED_SCLK) );
+    nrf_gpio_pins_set( (0<<LED_NUM) | (0<<LED_CAPS) | (0<<LED_SCLK) );
 }
 
 
@@ -107,8 +107,8 @@ static void buttons_init(void)
 {
     nrf_gpio_cfg_input(BOOTLOADER_BUTTON,
                              NRF_GPIO_PIN_PULLDOWN);
-    nrf_gpio_cfg_output(BOOTLOADER_BTN_OPT);                        
-    nrf_gpio_pin_set(BOOTLOADER_BTN_OPT);
+    // nrf_gpio_cfg_output(BOOTLOADER_BTN_OPT);                        
+    // nrf_gpio_pin_set(BOOTLOADER_BTN_OPT);
 }
 
 
@@ -195,7 +195,7 @@ int main(void)
     // Initialize.
     timers_init();
     buttons_init();
-		leds_init();
+	leds_init();
 
     (void)bootloader_init();
 
