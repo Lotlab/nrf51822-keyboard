@@ -33,9 +33,9 @@ static void send_mouse(report_mouse_t * report)
 }
 static void send_system(uint16_t data)
 {
-    // may support in future.
+    hids_system_key_send(2,(uint8_t *)&data);
 }
 static void send_consumer(uint16_t data)
 {
-    // may support in future.
+    hids_consumer_key_send(2,(uint8_t *)&data);
 }
