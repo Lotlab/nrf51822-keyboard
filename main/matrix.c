@@ -22,7 +22,7 @@ static const uint8_t row_pin_array[MATRIX_ROWS] = {21,22,23,24,25,26,27,29};
 static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0,30,28};
 
 #ifndef DEBOUNCE
-#   define DEBOUNCE	5
+#   define DEBOUNCE	1
 #endif
 static uint8_t debouncing = DEBOUNCE;
 
@@ -92,7 +92,7 @@ uint8_t matrix_scan(void)
 #ifdef HYBRID_MATRIX
         init_cols();
 #endif
-        delay_30ns();  // without this wait read unstable value.
+        delay_30ns();  // wait stable
         matrix_row_t cols = read_cols();
         if (matrix_debouncing[i] != cols) {
             matrix_debouncing[i] = cols;
@@ -106,7 +106,8 @@ uint8_t matrix_scan(void)
 
     if (debouncing) {
         if (--debouncing) {
-            wait_ms(1);
+            // no need to delay here manually, because we use the clock.
+            // wait_ms(1);
         } else {
             for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
                 matrix[i] = matrix_debouncing[i];
@@ -143,8 +144,14 @@ void matrix_sleep_prepare(void)
 {
     // 这里监听所有按键作为唤醒按键，所以真正的唤醒判断应该在main的初始化过程中
     for (uint8_t i = 0; i < MATRIX_COLS; i++)
-        nrf_gpio_pin_set((uint32_t)row_pin_array[i]);
+    {
+        nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
+        nrf_gpio_pin_clear((uint32_t)row_pin_array[i]);
+    }
     for (uint8_t i = 0; i < MATRIX_ROWS; i++)
-        nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
+    {
+        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] &= 0b111111111111100011111111;
+        nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+    }
 }
 

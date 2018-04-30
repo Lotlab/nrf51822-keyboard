@@ -43,10 +43,21 @@
 #define PNP_ID_PRODUCT_VERSION DEVICE_VER /**< Product Version. */
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
-#define MIN_CONN_INTERVAL MSEC_TO_UNITS(7.5, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
-#define MAX_CONN_INTERVAL MSEC_TO_UNITS(30, UNIT_1_25_MS)   /**< Maximum connection interval (30 ms). */
-#define SLAVE_LATENCY 6                                     /**< Slave latency. */
-#define CONN_SUP_TIMEOUT MSEC_TO_UNITS(850, UNIT_10_MS)     /**< Connection supervisory timeout (430 ms). */
+
+/* 
+ * Apple recommand that connection parameters should follow these role: 
+ * Interval Min >= 20ms
+ * Interval Max * (Slave Latency + 1) <= 2s
+ * Interval Max >= Interval Min + 20ms
+ * Slace Latency <= 4
+ * connSupervisionTimeout <= 6s
+ * Interval Max * (Slave Latency + 1)* 3 < connSupervisionTimeout
+ */
+
+#define MIN_CONN_INTERVAL MSEC_TO_UNITS(20, UNIT_1_25_MS) /**< Minimum connection interval (7.5 ms) */
+#define MAX_CONN_INTERVAL MSEC_TO_UNITS(60, UNIT_1_25_MS)   /**< Maximum connection interval (30 ms). */
+#define SLAVE_LATENCY 4                                     /**< Slave latency. */
+#define CONN_SUP_TIMEOUT MSEC_TO_UNITS(1000, UNIT_10_MS)     /**< Connection supervisory timeout (430 ms). */
 
 #define APP_ADV_FAST_INTERVAL 0x0028 /**< Fast advertising interval (in units of 0.625 ms. This value corresponds to 25 ms.). */
 #define APP_ADV_SLOW_INTERVAL 0x0C80 /**< Slow advertising interval (in units of 0.625 ms. This value corrsponds to 2 seconds). */
@@ -546,7 +557,7 @@ void bootloader_jump(void)
 
     NVIC_ClearPendingIRQ(SWI2_IRQn);
     
-	      uint32_t interrupt_setting_mask;
+	uint32_t interrupt_setting_mask;
     uint32_t irq;
 
     // Fetch the current interrupt settings.

@@ -61,11 +61,11 @@
 #define BOOTMAGIC_KEY_BOOT              KC_U /* boot! */
 #define BOOTMAGIC_KEY_ERASE_BOND        KC_E /* erase bond info */
 
-#define SLEEP_SLOW_TIMEOUT 60 // 60秒后转入慢速扫描模式
+#define SLEEP_SLOW_TIMEOUT 15 // 15秒后转入慢速扫描模式
 #define SLEEP_OFF_TIMEOUT 600 // 10分钟之后自动关机
 
 #define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(10, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
-#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(50, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(100, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
 #define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)                /**< 键盘Tick计时器 */
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
@@ -220,6 +220,7 @@ static void keyboard_sleep_counter_reset(void)
 static void keyboard_scan_timeout_handler(void *p_context)
 {
     UNUSED_PARAMETER(p_context);
+    // well, as fast as possible, it's impossible.
 	keyboard_task();
 }
 
@@ -376,13 +377,15 @@ static void power_manage(void)
 int main(void)
 {
     uint32_t err_code;
-
+    
     // Initialize.
-    app_trace_init();
+    // app_trace_init();
     timers_init();
     buttons_leds_init();
     ble_stack_init();
     scheduler_init();
+    
+    sd_power_dcdc_mode_set(true);
     
     // Initialize persistent storage module before the keyboard.
     err_code = pstorage_init();
