@@ -1,3 +1,10 @@
+/**
+ * @brief 键盘计时器兼容层
+ * 
+ * @file keyboard_timer.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include "nrf.h"
 #include "main.h"
 #include "timer.h"
@@ -7,10 +14,12 @@
 
 void timer_init()
 {
+    // do nothing
 }
 
 void timer_clear()
 {
+    // can't do anything
 }
 
 inline
@@ -41,6 +50,4 @@ uint32_t timer_elapsed32(uint32_t last)
     app_timer_cnt_diff_compute(time, last*32, &elapsed);
     return elapsed / 32;
 }
-
-
 

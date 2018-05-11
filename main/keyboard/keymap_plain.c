@@ -1,3 +1,10 @@
+/**
+ * @brief 基础键盘配列
+ * 
+ * @file keymap_plain.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include "keymap_common.h"
 #include "keyboard_fn.h"
 

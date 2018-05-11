@@ -69,7 +69,7 @@ static uint8_t report_map_data[] =
 
 		0xC0, // End Collection (Application)
         
-        
+        // system
         0x05, 0x01,                      // USAGE_PAGE (Generic Desktop)
         0x09, 0x80,                      // USAGE (System Control)
         0xa1, 0x01,                      // COLLECTION (Application)
@@ -82,7 +82,6 @@ static uint8_t report_map_data[] =
         0x95, 0x01,                      //   REPORT_COUNT (1)
         0x81, 0x00,                      //   INPUT (Data,Array,Abs)
         0xc0,                            // END_COLLECTION
-        
         
         // consumer 
         0x05, 0x0c,                      // USAGE_PAGE (Consumer Devices)
@@ -97,8 +96,6 @@ static uint8_t report_map_data[] =
         0x95, 0x01,                      //   REPORT_COUNT (1)
         0x81, 0x00,                      //   INPUT (Data,Array,Abs)
         0xc0,                            // END_COLLECTION
-        
-        
 };
 
 
@@ -110,7 +107,6 @@ uint8_t led_val;
 /** Abstracts buffer element */
 typedef struct hid_key_buffer
 {
-    uint8_t data_offset;    /**< Max Data that can be buffered for all entries */
     uint8_t data_len;       /**< Total length of data */
     uint8_t *p_data;        /**< Scanned key pattern */
     ble_hids_t *p_instance; /**< Identifies peer and service instance */
@@ -178,6 +174,7 @@ void hids_init(void)
     memset((void *)output_report_array, 0, sizeof(ble_hids_outp_rep_init_t));
 
     // Initialize HID Service
+    // keyboard input report
     p_input_report = &input_report_array[INPUT_REPORT_KEYS_INDEX];
     p_input_report->max_len = INPUT_REPORT_KEYS_MAX_LEN;
     p_input_report->rep_ref.report_id = 1;
@@ -187,6 +184,7 @@ void hids_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
     
+    // system input report
     p_input_report = &input_report_array[1];
     p_input_report->max_len = 2;
     p_input_report->rep_ref.report_id = 2;
@@ -196,6 +194,7 @@ void hids_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
     
+    // consumer input report
     p_input_report = &input_report_array[2];
     p_input_report->max_len = 2;
     p_input_report->rep_ref.report_id = 3;
@@ -205,6 +204,7 @@ void hids_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
 
+    // keyboard output report
     p_output_report = &output_report_array[OUTPUT_REPORT_INDEX];
     p_output_report->max_len = OUTPUT_REPORT_MAX_LEN;
     p_output_report->rep_ref.report_id = OUTPUT_REP_REF_ID;
@@ -286,7 +286,6 @@ static void on_hid_rep_char_write(ble_hids_evt_t *p_evt)
             APP_ERROR_CHECK(err_code);
 
             led_val = report_val;
-            // The report received is not supported by this application. Do nothing.
         }
     }
 }
@@ -392,9 +391,6 @@ static void on_hids_evt(ble_hids_t *p_hids, ble_hids_evt_t *p_evt)
  * @param[in]  p_instance     Identifies the service for which Key Notifications are requested.
  * @param[in]  p_key_pattern  Pointer to key pattern.
  * @param[in]  pattern_len    Length of key pattern. 0 < pattern_len < 7.
- * @param[in]  pattern_offset Offset applied to Key Pattern for transmission.
- * @param[out] actual_len     Provides actual length of Key Pattern transmitted, making buffering of
- *                            rest possible if needed.
  * @return     NRF_SUCCESS on success, BLE_ERROR_NO_TX_BUFFERS in case transmission could not be
  *             completed due to lack of transmission buffer or other error codes indicating reason
  *             for failure.
@@ -402,13 +398,12 @@ static void on_hids_evt(ble_hids_t *p_hids, ble_hids_evt_t *p_evt)
  */
 static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
                                             uint8_t *p_key_pattern,
-                                            uint16_t pattern_len,
-                                            uint16_t pattern_offset,
-                                            uint16_t *p_actual_len)
+                                            uint16_t pattern_len)
 {
     uint32_t err_code;
-    
-    // 处理按钮灯
+   
+// 处理键盘状态灯    
+#ifdef LED_STATE_FIX 
     for (int i = 2; i < pattern_len; i++)
     {
         switch (p_key_pattern[i])
@@ -426,16 +421,17 @@ static uint32_t send_key_scan_press_release(ble_hids_t *p_hids,
             break;
         }
     }
+#endif
     if (!m_in_boot_mode)
     {
-        err_code = ble_hids_inp_rep_send(&m_hids,
+        err_code = ble_hids_inp_rep_send(p_hids,
                                          INPUT_REPORT_KEYS_INDEX,
                                          INPUT_REPORT_KEYS_MAX_LEN,
                                          p_key_pattern);
     }
     else
     {
-        err_code = ble_hids_boot_kb_inp_rep_send(&m_hids,
+        err_code = ble_hids_boot_kb_inp_rep_send(p_hids,
                                                  INPUT_REPORT_KEYS_MAX_LEN,
                                                  p_key_pattern);
     }
@@ -479,8 +475,7 @@ void hids_buffer_init(void)
  */
 uint32_t hids_buffer_enqueue(ble_hids_t *p_hids,
                                uint8_t *p_key_pattern,
-                               uint16_t pattern_len,
-                               uint16_t offset)
+                               uint16_t pattern_len)
 {
     buffer_entry_t *element;
     uint32_t err_code = NRF_SUCCESS;
@@ -496,7 +491,6 @@ uint32_t hids_buffer_enqueue(ble_hids_t *p_hids,
         element = &buffer_list.buffer[(buffer_list.wp)];
         element->p_instance = p_hids;
         element->p_data = p_key_pattern;
-        element->data_offset = offset;
         element->data_len = pattern_len;
 
         buffer_list.count++;
@@ -527,7 +521,6 @@ uint32_t hids_buffer_dequeue(bool tx_flag)
 { 
     buffer_entry_t *p_element;
     uint32_t err_code = NRF_SUCCESS;
-    uint16_t actual_len = 0;
 
     if (BUFFER_LIST_EMPTY())
     {
@@ -543,16 +536,13 @@ uint32_t hids_buffer_dequeue(bool tx_flag)
         {
             err_code = send_key_scan_press_release(p_element->p_instance,
                                                    p_element->p_data,
-                                                   p_element->data_len,
-                                                   p_element->data_offset,
-                                                   &actual_len);
+                                                   p_element->data_len);
             // An additional notification is needed for release of all keys, therefore check
             // is for actual_len <= element->data_len and not actual_len < element->data_len
-            if ((err_code == BLE_ERROR_NO_TX_BUFFERS) && (actual_len <= p_element->data_len))
+            if (err_code == BLE_ERROR_NO_TX_BUFFERS)
             {
                 // Transmission could not be completed, do not remove the entry, adjust next data to
                 // be transmitted
-                p_element->data_offset = actual_len;
                 remove_element = false;
             }
         }
@@ -582,22 +572,19 @@ uint32_t hids_buffer_dequeue(bool tx_flag)
 void hids_keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
 {
     uint32_t err_code;
-    uint16_t actual_len = 0;
 
     err_code = send_key_scan_press_release(&m_hids,
                                            p_key_pattern,
-                                           key_pattern_len,
-                                           0,
-                                           &actual_len);
+                                           key_pattern_len);
     // An additional notification is needed for release of all keys, therefore check
     // is for actual_len <= key_pattern_len and not actual_len < key_pattern_len.
-    if ((err_code == BLE_ERROR_NO_TX_BUFFERS) && (actual_len <= key_pattern_len))
+    if (err_code == BLE_ERROR_NO_TX_BUFFERS)
     {
         // Buffer enqueue routine return value is not intentionally checked.
         // Rationale: Its better to have a a few keys missing than have a system
         // reset. Recommendation is to work out most optimal value for
         // MAX_BUFFER_ENTRIES to minimize chances of buffer queue full condition
-        UNUSED_VARIABLE(hids_buffer_enqueue(&m_hids, p_key_pattern, key_pattern_len, actual_len));
+        UNUSED_VARIABLE(hids_buffer_enqueue(&m_hids, p_key_pattern, key_pattern_len));
     }
 
     if ((err_code != NRF_SUCCESS) &&
@@ -608,7 +595,12 @@ void hids_keys_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
         APP_ERROR_HANDLER(err_code);
     }
 }
-
+/**
+ * @brief 发送System Key
+ * 
+ * @param key_pattern_len 
+ * @param p_key_pattern 
+ */
 void hids_system_key_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
 {
     
@@ -626,7 +618,12 @@ void hids_system_key_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
     }
     
 }
-
+/**
+ * @brief 发送Consumer Key
+ * 
+ * @param key_pattern_len 
+ * @param p_key_pattern 
+ */
 void hids_consumer_key_send(uint8_t key_pattern_len, uint8_t *p_key_pattern)
 {
     

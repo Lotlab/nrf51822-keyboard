@@ -1,3 +1,10 @@
+/**
+ * @brief 键盘内置功能
+ * 
+ * @file keyboard_fn.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include <stdint.h>
 #include "keyboard_fn.h"
 #include "main.h"

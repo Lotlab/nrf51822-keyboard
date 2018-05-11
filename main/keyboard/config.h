@@ -32,11 +32,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_COLS 14
 
 /* define if matrix has ghost */
-// WTM 这个也不会自动include
 #define MATRIX_HAS_GHOST
 
 /* Set 0 if debouncing isn't needed */
-#define DEBOUNCE    5
+#define DEBOUNCE    1
 
 /* Mechanical locking support. Use KC_LCAP, KC_LNUM or KC_LSCR instead in keymap */
 #define LOCKING_SUPPORT_ENABLE
@@ -49,6 +48,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     keyboard_report->mods == (MOD_BIT(KC_LSHIFT) | MOD_BIT(KC_RSHIFT)) \
 )
 
+// 定义Bootmagic按键
+#define BOOTMAGIC_KEY_BOOT              KC_U /* boot! */
+#define BOOTMAGIC_KEY_ERASE_BOND        KC_E /* erase bond info */
+
+// 键盘省电参数
+#define SLEEP_SLOW_TIMEOUT 15               // 键盘闲置多久后转入慢速扫描模式 (s)
+#define SLEEP_OFF_TIMEOUT 600               // 键盘闲置多久后转入自动关机 (s)
+#define KEYBOARD_FAST_SCAN_INTERVAL 10      // 通常模式下，多久扫描一次键盘 (ms)
+#define KEYBOARD_SLOW_SCAN_INTERVAL 100     // 慢速模式下，多久扫描一次键盘 (ms)
+
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.
@@ -58,7 +67,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define NO_DEBUG
 
 /* disable print */
-//#define NO_PRINT
+#define NO_PRINT
 
 /* disable action features */
 //#define NO_ACTION_LAYER
@@ -66,5 +75,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define NO_ACTION_ONESHOT
 //#define NO_ACTION_MACRO
 //#define NO_ACTION_FUNCTION
+
+#define BOOTMAGIC_ENABLE
+#define EXTRAKEY_ENABLE 
+
+/* fix led state on android */
+#define LED_STATE_FIX
 
 #endif

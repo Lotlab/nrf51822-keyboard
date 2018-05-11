@@ -1,3 +1,10 @@
+/**
+ * @brief EEPROM存储
+ * 
+ * @file storage.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include <stdint.h>
 #include "eeconfig.h"
 #include "pstorage.h"
@@ -30,8 +37,8 @@ static void eeconfig_set_default()
 }
 /*
     well, 让我解释一下发生了什么。此模块的pStorage需要在DeviceManager初始化之后才能初始化，
-  然后DeviceManager初始化又需要BootMagic来选择是否删除绑定信息。在不更改tmk_core的相关代
-  码的情况下，只能这么干：
+  然后DeviceManager初始化又需要BootMagic来选择是否删除绑定信息，而使用BootMagic就需要初始化
+  这个玩意。在不更改tmk_core的相关代码的情况下，只能这么干：
   1. 在开始的时候伪造初始化状态，使得BootMagic模块认为此模块已经被初始化了，就不再初始化。
   2. 在BootMagic的自定义Hook的最后，手工调用eeconfig_init初始化此模块。
   3. 如果BootMagic调用了eeconfig_init设置默认数据，那么设置操作会变为初始化，接着在下一次

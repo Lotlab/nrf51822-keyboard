@@ -1,3 +1,10 @@
+/**
+ * @brief 键盘按键扫描
+ * 
+ * @file matrix.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -10,20 +17,13 @@
 #include "util.h"
 #include "matrix.h"
 #include "keyboard_matrix.h"
+#include "keyboard_conf.h"
 #include "wait.h"
-
-// 由于垃圾Keil的Armcc不支持-I附加include，所以这两个东西在项目设置那里定义。
-// #define MATRIX_COLS    14
-// #define MATRIX_ROWS    8
-
-/** 行IO */
-static const uint8_t row_pin_array[MATRIX_ROWS] = {21,22,23,24,25,26,27,29};
-/** 列IO */
-static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0,30,28};
 
 #ifndef DEBOUNCE
 #   define DEBOUNCE	1
 #endif
+
 static uint8_t debouncing = DEBOUNCE;
 
 /* matrix state(1:on, 0:off) */
@@ -34,7 +34,10 @@ static matrix_row_t read_cols(void);
 static void select_row(uint8_t row);
 static void unselect_rows(void);
 
-/** 初始化键盘阵列 */
+/**
+ * @brief 初始化键盘阵列
+ * 
+ */
 void matrix_init(void)
 {
     for (uint_fast8_t i = MATRIX_ROWS; i--;)
@@ -48,7 +51,7 @@ void matrix_init(void)
         nrf_gpio_cfg_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN);
     }
 }
-/** ???? */
+/** read all rows */
 static matrix_row_t read_cols(void)
 {
     uint16_t result = 0;
@@ -140,6 +143,10 @@ uint8_t matrix_key_count(void)
     return count;
 }
 
+/**
+ * @brief 阵列准备睡眠
+ * 
+ */
 void matrix_sleep_prepare(void)
 {
     // 这里监听所有按键作为唤醒按键，所以真正的唤醒判断应该在main的初始化过程中

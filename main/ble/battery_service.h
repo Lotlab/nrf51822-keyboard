@@ -3,9 +3,9 @@
 
 #include "ble_bas.h"
 
-/** 电量测量计时器 (30秒) */
+/** 电量慢速测量计时器 (30秒) */
 #define BATTERY_LEVEL_MEAS_INTERVAL_SLOW APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER)
-/** 电量上报计时器 (1秒) */
+/** 电量快速测量计时器 (1秒) */
 #define BATTERY_LEVEL_MEAS_INTERVAL_FAST APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
 /** 电量测量结果队列长度 */
 #define ADC_RESULT_QUEUE_SIZE 7

@@ -1,3 +1,10 @@
+/**
+ * @brief 蓝牙主机驱动
+ * 
+ * @file host_driver.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include <stdint.h>
 #include "keyboard_host_driver.h"
 

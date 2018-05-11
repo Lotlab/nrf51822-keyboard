@@ -1,3 +1,10 @@
+/**
+ * @brief 键盘LED
+ * 
+ * @file keyboard_led.c
+ * @author Jim Jiang
+ * @date 2018-05-13
+ */
 #include "main.h"
 #include "keyboard_led.h"
 #include "keyboard_conf.h"
@@ -10,10 +17,10 @@ bool m_led_state[3] = {false};                    /**< LED State. */
 bool counting;
 APP_TIMER_DEF(led_off);
 
-/**@brief Notice by Led
- *
- * @param[in]   num   led val.
- * @param[in]   type  flash type;
+/**
+ * @brief 底层设置LED状态
+ * 
+ * @param num 
  */
 void set_led_num(uint8_t num)
 {
@@ -45,14 +52,22 @@ void led_notice(uint8_t num, uint8_t type)
         break; 
     }
 }
-
+/**
+ * @brief 设置LED状态
+ * 
+ * @param usb_led 三个LED位的值
+ */
 void led_set(uint8_t usb_led)
 {
 	led_change_handler(usb_led, true);
 }
 
-// val: 灯光值
-// all: 是否全局更新。若非全局更新则只更新指定的PIN
+/**
+ * @brief 更新LED状态
+ * 
+ * @param val 若全局更新，则指示全部的LED状态值。若非全局更新，则指示翻转对应位上的LED状态
+ * @param all 是否全局更新
+ */
 void led_change_handler(uint8_t val, uint8_t all)
 {
     if(!all)
@@ -68,12 +83,21 @@ void led_change_handler(uint8_t val, uint8_t all)
     for(uint8_t i=0; i<3; i++) // 更新暂存状态
         m_led_state[i] = val & 1 << i;
 }
+/**
+ * @brief 关闭LED
+ * 
+ * @param p_context 
+ */
 void led_turnoff(void * p_context)
 {
     set_led_num(0x00);
     counting = false;
 }
 
+/**
+ * @brief 初始化LED
+ * 
+ */
 void led_init(void)
 {
     nrf_gpio_cfg_output(LED_NUM);

@@ -27,45 +27,29 @@
  */
 
 #include "main.h"
-#include <string.h>
-#include "nordic_common.h"
-#include "nrf.h"
-#include "nrf_assert.h"
-#include "app_error.h"
-#include "app_trace.h"
-#include "ble.h"
 #include "ble_advertising.h"
 #include "softdevice_handler_appsh.h"
 #include "app_scheduler.h"
 #include "app_timer_appsh.h"
-#include "nrf_delay.h"
 #include "pstorage.h"
 
 #include "ble_services.h"
 #include "battery_service.h"
 #include "ble_hid_service.h"
 
-#include "report.h"
-
-#include "keycode.h"
 #include "keyboard.h"
 #include "keyboard_led.h"
 #include "keyboard_matrix.h"
+#include "keyboard_host_driver.h"
+
+#include "report.h"
 #include "hook.h"
 #include "custom_hook.h"
-#include "keyboard_host_driver.h"
 #include "bootmagic.h"
 #include "eeconfig.h"
 
-
-#define BOOTMAGIC_KEY_BOOT              KC_U /* boot! */
-#define BOOTMAGIC_KEY_ERASE_BOND        KC_E /* erase bond info */
-
-#define SLEEP_SLOW_TIMEOUT 15 // 15秒后转入慢速扫描模式
-#define SLEEP_OFF_TIMEOUT 600 // 10分钟之后自动关机
-
-#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(10, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
-#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(100, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(KEYBOARD_FAST_SCAN_INTERVAL, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(KEYBOARD_SLOW_SCAN_INTERVAL, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
 #define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)                /**< 键盘Tick计时器 */
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
@@ -113,6 +97,7 @@ void service_error_handler(uint32_t nrf_error)
 
 static void keyboard_scan_timeout_handler(void *p_context);
 static void keyboard_sleep_timeout_handler(void *p_context);
+
 /**@brief 计时器初始化函数
  *
  * @details Initializes the timer module.
@@ -137,16 +122,21 @@ static void timers_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-
-
 /**@brief 初始化程序所需的服务
  */
 static void services_init(void)
 {
     hids_init();
+    battery_service_init();
 }
 
-bool keyboard_conn_pass_enter_handler(uint8_t *key_packet, uint8_t key_packet_size)
+/**
+ * @brief 处理配对码输入
+ * 
+ * @param key_packet 按键报文
+ * @param key_packet_size 报文长度
+ */
+void keyboard_conn_pass_enter_handler(uint8_t *key_packet, uint8_t key_packet_size)
 {
     if (passkey_enter_index < 6 && auth_key_reqired())
     {
@@ -170,14 +160,14 @@ bool keyboard_conn_pass_enter_handler(uint8_t *key_packet, uint8_t key_packet_si
             auth_key_reply(passkey_entered);
             passkey_enter_index = 0;
         }
-        return true;
-    }
-    else
-    {
-        return false;
     }
 }
 
+/**
+ * @brief 切换扫描模式
+ * 
+ * @param slow 切换至慢速扫描
+ */
 static void keyboard_switch_scan_mode(bool slow)
 {
     uint32_t err_code;
@@ -190,6 +180,11 @@ static void keyboard_switch_scan_mode(bool slow)
     APP_ERROR_CHECK(err_code);
 }
 
+/**
+ * @brief 键盘睡眠定时器
+ * 
+ * @param p_context 
+ */
 static void keyboard_sleep_timeout_handler(void *p_context)
 {
     sleep_timer_counter++;
@@ -202,7 +197,10 @@ static void keyboard_sleep_timeout_handler(void *p_context)
         sleep_mode_enter(true);
     }
 }
-
+/**
+ * @brief 重置键盘睡眠定时器
+ * 
+ */
 static void keyboard_sleep_counter_reset(void)
 {
     if (sleep_timer_counter >= SLEEP_SLOW_TIMEOUT)
@@ -223,17 +221,29 @@ static void keyboard_scan_timeout_handler(void *p_context)
     // well, as fast as possible, it's impossible.
 	keyboard_task();
 }
-
+/**
+ * @brief 键盘按键按下的Hook
+ * 
+ * @param event 
+ */
 void hook_matrix_change(keyevent_t event)
 {
     keyboard_sleep_counter_reset();
 }
-
+/**
+ * @brief 发送按键报文的Hook
+ * 
+ * @param report 按键报文
+ */
 void hook_send_keyboard(report_keyboard_t * report)
 {
     keyboard_conn_pass_enter_handler(report->keys, sizeof(report->keys));
 }
 
+/**
+ * @brief BootMagic的Hook
+ * 
+ */
 void hook_bootmagic()
 {
     bool erase_bond = false;
@@ -271,6 +281,8 @@ static void timers_start(void)
 /**@brief Function for putting the chip into sleep mode.
  *
  * @note This function will not return.
+ * 
+ * @param[in]   notice   Flash led to notice or not.
  */
 void sleep_mode_enter(bool notice)
 {
@@ -393,7 +405,6 @@ int main(void)
     
 	keyboard_init();
     services_init();
-    battery_service_init();
 
     // set driver after all module inited.
     host_set_driver(&driver);
