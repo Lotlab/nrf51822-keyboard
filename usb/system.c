@@ -1,5 +1,6 @@
 #include "CH554_SDCC.h"
 #include "compiler.h"
+#include <stdio.h>
 
 #define FREQ_SYS 12000000
 #define UART0_BUAD 57600
@@ -67,6 +68,16 @@ void DelayMs(uint16_t n)                                                  // 以
 		while ( TKEY_CTRL & bTKC_IF );
 	}
 }
+
+
+void PrintHex(uint8_t * data, uint8_t len)
+{
+    for(int i=0;i<len;i++)
+    {
+        printf_tiny("%x ", data[i]);
+    }
+}
+
 
 int putchar(int c)
 {

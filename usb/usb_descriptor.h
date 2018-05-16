@@ -31,26 +31,37 @@ uint8_t const DeviceDescriptor[SIZEOF_DEVICE_DESCRIPTOR] = {
     1                                       //  Number of configurations supported
 };
 
-#define DESCRIPTOR_TOTAL_LENGTH             73
-#define USB_NUM_INTERFACES                  0x02
+#define DESCRIPTOR_TOTAL_LENGTH             sizeof(ConfigDescriptor)
+#define USB_NUM_INTERFACES                  0x03
 #define USB_SUPPORT_REM_WAKE                0x00    // not support
 #define USB_SUPPORT_SELF_POWERED            0x80    // not self-powered
 #define USB_MAX_POWER                       0xfa    // 500 mA
 
-#define report_desc_size_HID0 63
-#define report_desc_size_HID1 36
+#define report_desc_size_HID0               sizeof(report_desc_HID0)        // 63
+#define report_desc_size_HID1               sizeof(report_desc_HID1)        // 36
+#define report_desc_size_HID2               sizeof(report_desc_HID2)        //
+#define report_desc_size_HID3               sizeof(report_desc_HID3)        //
 //#define SIZEOF_REPORT_DESCRIPTOR  36
 //#define USBHID_REPORT_LENGTH      64  // length of whole HID report (including Report ID)
 #define INTF_STRING_INDEX         5
 
 
-#define HID0_REPORT_INTERFACE                0              // Report interface number of HID0
+#define HID0_REPORT_INTERFACE              0              // Report interface number of HID0
 #define HID0_OUTEP_ADDR                    0x01           // Output Endpoint number of HID0
 #define HID0_INEP_ADDR                     0x81           // Input Endpoint number of HID0
 
-#define HID1_REPORT_INTERFACE                1              // Report interface number of HID1
+#define HID1_REPORT_INTERFACE              1              // Report interface number of HID1
 #define HID1_OUTEP_ADDR                    0x02           // Output Endpoint number of HID1
 #define HID1_INEP_ADDR                     0x82           // Input Endpoint number of HID1
+
+#define HID2_REPORT_INTERFACE              2              // Report interface number of HID1
+#define HID2_OUTEP_ADDR                    0x03           // Output Endpoint number of HID1
+#define HID2_INEP_ADDR                     0x83           // Input Endpoint number of HID1
+
+#define HID3_REPORT_INTERFACE              3              // Report interface number of HID1
+#define HID3_OUTEP_ADDR                    0x04           // Output Endpoint number of HID1
+#define HID3_INEP_ADDR                     0x84           // Input Endpoint number of HID1
+
 
 /*-----------------------------------------------------------------------------+
 | Configuration Descriptor                                                     |
@@ -110,20 +121,17 @@ uint8_t const ConfigDescriptor []=
     15,                                 // bInterval, ms
     /* end of HID[0]*/
 
-
-    /*start HID[1] Here */
-
     //-------- Descriptor for HID class device -------------------------------------
     // INTERFACE DESCRIPTOR (9 bytes)
     0x09,                               // bLength
     0x04,                               // bDescriptorType: 4
     0x01,                               // bInterfaceNumber
     0x00,                               // bAlternateSetting
-    2,                                  // bNumEndpoints
+    1,                                  // bNumEndpoints
     0x03,                               // bInterfaceClass: 3 = HID Device
     0,                                  // bInterfaceSubClass:
     0,                                  // bInterfaceProtocol:
-    INTF_STRING_INDEX + 1,              // iInterface:1
+    INTF_STRING_INDEX+ 1,                 // iInterface:1
 
     // HID DESCRIPTOR (9 bytes)
     0x09,                                 // bLength of HID descriptor
@@ -142,14 +150,80 @@ uint8_t const ConfigDescriptor []=
     0x40, 0x00,                         // wMaxPacketSize, 64 bytes
     10,                                  // bInterval, ms
 
+
+    //-------- Descriptor for HID class device -------------------------------------
+    // INTERFACE DESCRIPTOR (9 bytes)
+    0x09,                               // bLength
+    0x04,                               // bDescriptorType: 4
+    0x02,                               // bInterfaceNumber
+    0x00,                               // bAlternateSetting
+    2,                                  // bNumEndpoints
+    0x03,                               // bInterfaceClass: 3 = HID Device
+    0,                                  // bInterfaceSubClass:
+    0,                                  // bInterfaceProtocol:
+    INTF_STRING_INDEX + 2,                  // iInterface:1
+
+    // HID DESCRIPTOR (9 bytes)
+    0x09,                                 // bLength of HID descriptor
+    0x21,                                 // HID Descriptor Type: 0x21
+    0x01,0x01,                            // HID Revision number 1.01
+    0x00,                                // Target country, nothing specified (00h)
+    0x01,                                // Number of HID classes to follow
+    0x22,                                // Report descriptor type
+    (report_desc_size_HID2 & 0x0ff),  // Total length of report descriptor
+    (report_desc_size_HID2 > 0xFF ? report_desc_size_HID2 >> 8 : 0x00),
+
     0x07,                               // bLength
     0x05,                               // bDescriptorType
-    HID1_OUTEP_ADDR,                    // bEndpointAddress; bit7=1 for IN, bits 3-0=1 for ep1
+    HID2_INEP_ADDR,                     // bEndpointAddress; bit7=1 for IN, bits 3-0=1 for ep1
     0x03,                               // bmAttributes, interrupt transfers
     0x40, 0x00,                         // wMaxPacketSize, 64 bytes
     10,                                  // bInterval, ms
-    /* end of HID[1]*/
 
+    0x07,                               // bLength
+    0x05,                               // bDescriptorType
+    HID2_OUTEP_ADDR,                    // bEndpointAddress; bit7=1 for IN, bits 3-0=1 for ep1
+    0x03,                               // bmAttributes, interrupt transfers
+    0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+    10,                                  // bInterval, ms
+
+/*
+
+    //-------- Descriptor for HID class device -------------------------------------
+    // INTERFACE DESCRIPTOR (9 bytes)
+    0x09,                               // bLength
+    0x04,                               // bDescriptorType: 4
+    0x03,                               // bInterfaceNumber
+    0x00,                               // bAlternateSetting
+    2,                                  // bNumEndpoints
+    0x03,                               // bInterfaceClass: 3 = HID Device
+    0,                                  // bInterfaceSubClass:
+    0,                                  // bInterfaceProtocol:
+    INTF_STRING_INDEX + 3,                  // iInterface:1
+
+    // HID DESCRIPTOR (9 bytes)
+    0x09,                                 // bLength of HID descriptor
+    0x21,                                 // HID Descriptor Type: 0x21
+    0x01,0x01,                            // HID Revision number 1.01
+    0x00,                                // Target country, nothing specified (00h)
+    0x01,                                // Number of HID classes to follow
+    0x22,                                // Report descriptor type
+    (report_desc_size_HID3 & 0x0ff),  // Total length of report descriptor
+    (report_desc_size_HID3 > 0xFF ? report_desc_size_HID3 >> 8 : 0x00),
+
+    0x07,                               // bLength
+    0x05,                               // bDescriptorType
+    HID3_INEP_ADDR,                     // bEndpointAddress; bit7=1 for IN, bits 3-0=1 for ep1
+    0x03,                               // bmAttributes, interrupt transfers
+    0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+    10,                                  // bInterval, ms
+
+    0x07,                               // bLength
+    0x05,                               // bDescriptorType
+    HID3_OUTEP_ADDR,                    // bEndpointAddress; bit7=1 for IN, bits 3-0=1 for ep1
+    0x03,                               // bmAttributes, interrupt transfers
+    0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+    10,                                  // bInterval, ms
 
     /******************************************************* end of HID**************************************/
 
@@ -207,7 +281,14 @@ uint8_t const StringDescriptor[] = {
     3,        // bDescriptorType
     'B',0x00,'L',0x00,'E',0x00,'4',0x00,'1',0x00,'0',0x00,
     '0',0x00,' ',0x00,'C',0x00,'o',0x00,'n',0x00,'f',0x00,
-    'i',0x00,'g',0x00,'u',0x00,'r',0x00,'e',0x00
+    'i',0x00,'g',0x00,'u',0x00,'r',0x00,'e',0x00,
+
+        // String index6, Interface String
+    36,        // Length of this string descriptor
+    3,        // bDescriptorType
+    'B',0x00,'L',0x00,'E',0x00,'4',0x00,'1',0x00,'0',0x00,
+    '0',0x00,' ',0x00,'C',0x00,'o',0x00,'n',0x00,'f',0x00,
+    'i',0x00,'g',0x00,'u',0x00,'r',0x00,'e',0x00,
 };
 
 
@@ -220,7 +301,8 @@ typedef struct StringPointerAndLength {
 
 StrPtrL const ReportDescriptor[] = {
     STRPTRL(report_desc_HID0),
-    STRPTRL(report_desc_HID1)
+    STRPTRL(report_desc_HID1),
+    STRPTRL(report_desc_HID2),
 };
 
 uint8_t const report_desc_HID0[]=
@@ -261,11 +343,41 @@ uint8_t const report_desc_HID0[]=
 };
 uint8_t const report_desc_HID1[]=
 {
+  /* system control */
+  0x05, 0x01,                      // USAGE_PAGE (Generic Desktop)
+  0x09, 0x80,                      // USAGE (System Control)
+  0xa1, 0x01,                      // COLLECTION (Application)
+  0x85, 2,                         //   REPORT_ID (2)
+  0x15, 0x01,                      //   LOGICAL_MINIMUM (0x1)
+  0x26, 0xb7, 0x00,                //   LOGICAL_MAXIMUM (0xb7)
+  0x19, 0x01,                      //   USAGE_MINIMUM (0x1)
+  0x29, 0xb7,                      //   USAGE_MAXIMUM (0xb7)
+  0x75, 0x10,                      //   REPORT_SIZE (16)
+  0x95, 0x01,                      //   REPORT_COUNT (1)
+  0x81, 0x00,                      //   INPUT (Data,Array,Abs)
+  0xc0,                            // END_COLLECTION
+  /* consumer */
+  0x05, 0x0c,                      // USAGE_PAGE (Consumer Devices)
+  0x09, 0x01,                      // USAGE (Consumer Control)
+  0xa1, 0x01,                      // COLLECTION (Application)
+  0x85, 3,                         //   REPORT_ID (3)
+  0x15, 0x01,                      //   LOGICAL_MINIMUM (0x1)
+  0x26, 0x9c, 0x02,                //   LOGICAL_MAXIMUM (0x29c)
+  0x19, 0x01,                      //   USAGE_MINIMUM (0x1)
+  0x2a, 0x9c, 0x02,                //   USAGE_MAXIMUM (0x29c)
+  0x75, 0x10,                      //   REPORT_SIZE (16)
+  0x95, 0x01,                      //   REPORT_COUNT (1)
+  0x81, 0x00,                      //   INPUT (Data,Array,Abs)
+  0xc0,                            // END_COLLECTION
+};
+
+uint8_t const report_desc_HID2[]=
+{
     0x06, 0x00, 0xff,    // Usage Page (Vendor Defined)
     0x09, 0x01,    // Usage Page (Vendor Defined)
     0xa1, 0x01,    // COLLECTION (Application)
     0x85, 0x3f,    // Report ID (Vendor Defined)
-    0x95, MAX_PACKET_SIZE-1,    // Report Count
+    0x95, 0x04,    // Report Count
     0x75, 0x08,    // Report Size
     0x25, 0x01,    // Usage Maximum
     0x15, 0x01,    // Usage Minimum
@@ -279,7 +391,6 @@ uint8_t const report_desc_HID1[]=
     0x09, 0x01,    // Vendor Usage
     0x91 ,0x02,    // Ouput (Data,Var,Abs)
     0xc0    // end Application Collection
-
 };
 
 
