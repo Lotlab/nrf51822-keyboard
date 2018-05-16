@@ -49,13 +49,7 @@
 #include "nrf_mbr.h"
 #include "boards.h"
 
-#define BOOTLOADER_BTN_OPT 28
-#define BOOTLOADER_BTN_IPT 21
-
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 1                                                       /**< Include the service_changed characteristic. For DFU this should normally be the case. */
-
-#define BOOTLOADER_BUTTON               16                                      /**< Button used to enter SW update mode. */
-#define UPDATE_IN_PROGRESS_LED          LED_NUM                                                 /**< Led used to indicate that DFU is active. */
 
 #define APP_TIMER_PRESCALER             0                                                       /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE         4                                                       /**< Size of timer operation queues. */
@@ -63,8 +57,6 @@
 #define SCHED_MAX_EVENT_DATA_SIZE       MAX(APP_TIMER_SCHED_EVT_SIZE, 0)                        /**< Maximum size of scheduler events. */
 
 #define SCHED_QUEUE_SIZE                20                                                      /**< Maximum number of events in the scheduler queue. */
-
-
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -82,13 +74,12 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(0xDEADBEEF, line_num, p_file_name);
 }
 
-
 /**@brief Function for initialization of LEDs.
  */
 static void leds_init(void)
 {
-    nrf_gpio_range_cfg_output(LED_NUM, LED_SCLK);
-    nrf_gpio_pins_set( (0<<LED_NUM) | (0<<LED_CAPS) | (0<<LED_SCLK) );
+    nrf_gpio_cfg_output(UPDATE_IN_PROGRESS_LED);
+    LED_CLEAR(UPDATE_IN_PROGRESS_LED);
 }
 
 
@@ -201,7 +192,7 @@ int main(void)
 
     if (bootloader_dfu_sd_in_progress())
     {
-        nrf_gpio_pin_clear(UPDATE_IN_PROGRESS_LED);
+        LED_SET(UPDATE_IN_PROGRESS_LED);
 
         err_code = bootloader_dfu_sd_update_continue();
         APP_ERROR_CHECK(err_code);
@@ -212,7 +203,7 @@ int main(void)
         err_code = bootloader_dfu_sd_update_finalize();
         APP_ERROR_CHECK(err_code);
 
-        nrf_gpio_pin_set(UPDATE_IN_PROGRESS_LED);
+        LED_CLEAR(UPDATE_IN_PROGRESS_LED);
     }
     else
     {
@@ -226,13 +217,13 @@ int main(void)
     
     if (dfu_start || (!bootloader_app_is_valid(DFU_BANK_0_REGION_START)))
     {
-        nrf_gpio_pin_clear(UPDATE_IN_PROGRESS_LED);
+        LED_SET(UPDATE_IN_PROGRESS_LED);
 
         // Initiate an update of the firmware.
         err_code = bootloader_dfu_start();
         APP_ERROR_CHECK(err_code);
 
-        nrf_gpio_pin_set(UPDATE_IN_PROGRESS_LED);
+        LED_CLEAR(UPDATE_IN_PROGRESS_LED);
     }
 
     if (bootloader_app_is_valid(DFU_BANK_0_REGION_START) && !bootloader_dfu_sd_in_progress())

@@ -250,7 +250,9 @@ void hook_bootmagic()
     if(!bootmagic_scan_key(BOOTMAGIC_KEY_BOOT))
     {
         // Yes, 如果没有按下Space+U，那就不开机。
+    #ifndef KEYBOARD_DEBUG
         sleep_mode_enter(false);
+    #endif
     }
     if(bootmagic_scan_key(BOOTMAGIC_KEY_ERASE_BOND))
     {
@@ -414,6 +416,7 @@ int main(void)
     APP_ERROR_CHECK(err_code);
     
     led_change_handler(0x01, true);
+    led_notice(0x07, 0x00);
 
     // Enter main loop.
     for (;;)

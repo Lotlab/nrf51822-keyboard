@@ -24,9 +24,15 @@ APP_TIMER_DEF(led_off);
  */
 void set_led_num(uint8_t num)
 {
+#ifdef LED_NUM
     nrf_gpio_pin_write(LED_NUM, num & 0x01);
+#endif
+#ifdef LED_CAPS
     nrf_gpio_pin_write(LED_CAPS, num & 0x02);
+#endif
+#ifdef LED_SCLK
     nrf_gpio_pin_write(LED_SCLK, num & 0x04);
+#endif
 }
 
 /**@brief Notice by Led
@@ -100,8 +106,14 @@ void led_turnoff(void * p_context)
  */
 void led_init(void)
 {
+#ifdef LED_NUM
     nrf_gpio_cfg_output(LED_NUM);
+#endif
+#ifdef LED_CAPS
     nrf_gpio_cfg_output(LED_CAPS);
+#endif
+#ifdef LED_SCLK
     nrf_gpio_cfg_output(LED_SCLK);
+#endif
     app_timer_create(&led_off, APP_TIMER_MODE_SINGLE_SHOT, led_turnoff);
 }

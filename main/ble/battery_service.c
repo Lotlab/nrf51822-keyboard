@@ -10,6 +10,8 @@
 #include "keyboard_conf.h"
 #include "battery_service.h"
 
+#ifdef KEYBOARD_ADC
+
 #include "nrf_adc.h"
 #include "app_error.h"
 #include "app_timer_appsh.h"
@@ -252,3 +254,9 @@ void battery_service_ble_evt(ble_evt_t *p_ble_evt)
 {
     ble_bas_on_ble_evt(&m_bas, p_ble_evt);
 }
+
+#else
+void battery_service_ble_evt(ble_evt_t *p_ble_evt){}
+void battery_timer_start(void){}
+void battery_service_init(void){}
+#endif

@@ -43,12 +43,22 @@ void matrix_init(void)
     for (uint_fast8_t i = MATRIX_ROWS; i--;)
     {
         nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
-        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] |= 0x400; //Set pin to be "Disconnected 0 and standard 1"
+    #ifndef MATRIX_HAS_GHOST
+        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] = GPIO_PIN_CNF_DRIVE_H0D1 ; //Set pin to be "Disconnected 0 and standard 1"
+        nrf_gpio_pin_set((uint32_t)row_pin_array[i]);         //Set pin to low
+    #else 
+        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] = GPIO_PIN_CNF_DRIVE_D0S1 ; //Set pin to be "Disconnected 0 and standard 1"
         nrf_gpio_pin_clear((uint32_t)row_pin_array[i]);         //Set pin to low
+    #endif
+        
     }
     for (uint_fast8_t i = MATRIX_COLS; i--;)
     {
+    #ifndef MATRIX_HAS_GHOST
+        nrf_gpio_cfg_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLUP);
+    #else
         nrf_gpio_cfg_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN);
+    #endif
     }
 }
 /** read all rows */
@@ -58,23 +68,36 @@ static matrix_row_t read_cols(void)
 
     for (uint_fast8_t c = 0; c < MATRIX_COLS; c++)
     {
+    #ifndef MATRIX_HAS_GHOST
+        if (!nrf_gpio_pin_read((uint32_t)column_pin_array[c]))
+            result |= 1 << c;
+    #else
         if (nrf_gpio_pin_read((uint32_t)column_pin_array[c]))
             result |= 1 << c;
+    #endif
     }
 
     return result;
 }
 
 static void select_row(uint8_t row)
-{
-	  nrf_gpio_pin_set((uint32_t)row_pin_array[row]);
+{    
+#ifndef MATRIX_HAS_GHOST
+	nrf_gpio_pin_clear((uint32_t)row_pin_array[row]);
+#else
+    nrf_gpio_pin_set((uint32_t)row_pin_array[row]);
+#endif
 }
 
 static void unselect_rows(void)
 {
     for (uint_fast8_t i = 0; i < MATRIX_ROWS; i++)
     {
+    #ifndef MATRIX_HAS_GHOST
+        nrf_gpio_pin_set((uint32_t)row_pin_array[i]);
+    #else
         nrf_gpio_pin_clear((uint32_t)row_pin_array[i]);
+    #endif
     }
 }
 
@@ -153,12 +176,12 @@ void matrix_sleep_prepare(void)
     for (uint8_t i = 0; i < MATRIX_COLS; i++)
     {
         nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
-        nrf_gpio_pin_clear((uint32_t)row_pin_array[i]);
+        nrf_gpio_pin_set((uint32_t)row_pin_array[i]);
     }
     for (uint8_t i = 0; i < MATRIX_ROWS; i++)
     {
         NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] &= 0b111111111111100011111111;
-        nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+        nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
     }
 }
 

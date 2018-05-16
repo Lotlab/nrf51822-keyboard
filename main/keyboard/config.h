@@ -18,21 +18,46 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#ifdef BLE4100
+#define KEYBOARD_4100
+#elif BLE60
+#define KEYBOARD_60
+#else
+#error PLEASE SPECIFIC ONE KEYBOARD, BLE4100 or BLE60
+#endif
 
 /* HID Device descriptor parameter */
 #define VENDOR_ID       0x1915
 #define PRODUCT_ID      0xEEEE
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    "Lotlab"
-#define PRODUCT         "BLE4100"
 #define DESCRIPTION     t.m.k. keyboard firmware for GH60
 
-/* key matrix size */
-#define MATRIX_ROWS 8
-#define MATRIX_COLS 14
+#ifdef KEYBOARD_4100
 
-/* define if matrix has ghost */
-#define MATRIX_HAS_GHOST
+    #define PRODUCT         "BLE4100"
+
+    /* key matrix size */
+    #define MATRIX_ROWS 8
+    #define MATRIX_COLS 14
+
+    /* define if matrix has ghost */
+    #define MATRIX_HAS_GHOST
+
+#endif
+
+#ifdef KEYBOARD_60
+
+    #define PRODUCT         "Lot60-BLE"
+
+    /* key matrix size */
+    #define MATRIX_ROWS 5
+    #define MATRIX_COLS 14
+    
+    #define KEYBOARD_DEBUG
+    #define KEYBOARD_REVA
+
+#endif
 
 /* Set 0 if debouncing isn't needed */
 #define DEBOUNCE    1
