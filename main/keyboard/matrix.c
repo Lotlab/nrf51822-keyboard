@@ -180,7 +180,7 @@ void matrix_sleep_prepare(void)
     }
     for (uint8_t i = 0; i < MATRIX_ROWS; i++)
     {
-        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] &= 0b111111111111100011111111;
+        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] = GPIO_PIN_CNF_DRIVE_S0S1;
         nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
     }
 }

@@ -41,6 +41,7 @@
 #include "keyboard_led.h"
 #include "keyboard_matrix.h"
 #include "keyboard_host_driver.h"
+#include "keymap_storage.h"
 
 #include "report.h"
 #include "hook.h"
@@ -260,9 +261,6 @@ void hook_bootmagic()
         erase_bond = true;
     }
     ble_services_init(erase_bond);
-    
-    // 真正的初始化，查看storage.c获取更多信息
-    eeconfig_init();
 }
 
 /**@brief 计时器启动函数
@@ -405,6 +403,7 @@ int main(void)
     err_code = pstorage_init();
     APP_ERROR_CHECK(err_code);
     
+    keymap_init();
 	keyboard_init();
     services_init();
 

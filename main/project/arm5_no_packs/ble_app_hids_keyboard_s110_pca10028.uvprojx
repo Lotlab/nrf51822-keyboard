@@ -635,6 +635,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\keyboard\keyboard_fn.c</FilePath>
             </File>
+            <File>
+              <FileName>keymap_storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard\keymap_storage.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -3270,6 +3275,11 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>keymap_storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard\keymap_storage.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -6326,6 +6336,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\keyboard\keyboard_fn.c</FilePath>
             </File>
+            <File>
+              <FileName>keymap_storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard\keymap_storage.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -8748,6 +8763,11 @@
               <FileName>keyboard_fn.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\keyboard\keyboard_fn.c</FilePath>
+            </File>
+            <File>
+              <FileName>keymap_storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\keyboard\keymap_storage.c</FilePath>
             </File>
           </Files>
         </Group>
