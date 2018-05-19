@@ -48,6 +48,7 @@
 #include "custom_hook.h"
 #include "bootmagic.h"
 #include "eeconfig.h"
+#include "uart_driver.h"
 
 #define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(KEYBOARD_FAST_SCAN_INTERVAL, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
 #define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(KEYBOARD_SLOW_SCAN_INTERVAL, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
@@ -291,6 +292,9 @@ void sleep_mode_enter(bool notice)
     if(notice)led_notice(0x00, true);
     else led_notice(0x00, false);
     matrix_sleep_prepare();
+#ifdef UART_SUPPORT
+    uart_deinit();
+#endif
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
     err_code = sd_power_system_off();
@@ -406,6 +410,9 @@ int main(void)
     keymap_init();
 	keyboard_init();
     services_init();
+#ifdef UART_SUPPORT
+    uart_init();
+#endif
 
     // set driver after all module inited.
     host_set_driver(&driver);

@@ -1,9 +1,9 @@
 #include "CH554_SDCC.h"
 #include "compiler.h"
+#include "system.h"
 #include <stdio.h>
 
-#define FREQ_SYS 12000000
-#define UART0_BUAD 57600
+#define UART0_BUAD 38400
 
 
 /** \brief 配置系统时钟

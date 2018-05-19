@@ -56,6 +56,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     
     #define KEYBOARD_DEBUG
     #define KEYBOARD_REVA
+    
+    #define UART_SUPPORT
 
 #endif
 

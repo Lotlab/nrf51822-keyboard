@@ -5,7 +5,7 @@
 // #include "usb_descriptor.h"
 #include "descriptor.h"
 
-#include <stdio.h>
+// #include <stdio.h>
 #include <string.h>
 
 #define THIS_ENDP0_SIZE         DEFAULT_ENDP0_SIZE
@@ -100,7 +100,7 @@ void EP0_SETUP()
                 {
                     case USB_GET_DESCRIPTOR:
                         Ready = GetUsbDescriptor(UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, UsbSetupBuf->wIndexL, &len, &pDescr);
-                        printf_tiny("GetDesc(%x, %x, %x)\n", UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, UsbSetupBuf->wIndexL);
+                        // printf_tiny("GetDesc(%x, %x, %x)\n", UsbSetupBuf->wValueH, UsbSetupBuf->wValueL, UsbSetupBuf->wIndexL);
                         if ( SetupLen > len ) SetupLen = len;    //限制总长度
                         len = SetupLen >= THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;                  //本次传输长度
                         memcpy(Ep0Buffer,pDescr,len);                        //加载上传数据
@@ -288,7 +288,7 @@ void EP0_SETUP()
 
 void EP1_IN()
 {
-    printf_tiny("EP1_IN\n");
+    // printf_tiny("EP1_IN\n");
     UEP1_T_LEN = 0;                                                     //预使用发送长度一定要清空
 //  UEP2_CTRL ^= bUEP_T_TOG;                                            //如果不设置自动翻转则需要手动翻转
     UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
@@ -297,7 +297,7 @@ void EP1_IN()
 
 void EP2_IN()
 {
-    printf_tiny("EP2_IN\n");
+    // printf_tiny("EP2_IN\n");
     UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
 //  UEP1_CTRL ^= bUEP_T_TOG;                                            //如果不设置自动翻转则需要手动翻转
     UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK

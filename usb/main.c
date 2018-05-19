@@ -1,14 +1,14 @@
+#include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include "CH554_SDCC.h"
 #include "compiler.h"
 #include "system.h"
 #include "endpoints.h"
 #include "interrupt.h"
-#include <string.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include "usb_comm.h"
+#include "uart.h"
 
-#define LED RXD1
-#define Ep2InKey P1_5;
 
 /** \brief CH554软复位
  *
@@ -37,7 +37,6 @@ void DeviceInterrupt( void ) __interrupt INT_NO_USB __using 1                   
     UsbIsr();
 }
 
-
 void KeyboardGenericUpload(uint8_t * packet, uint8_t len)
 {
     if(len != 8) return;
@@ -51,7 +50,7 @@ void KeyboardExtraUpload(uint8_t * packet, uint8_t len)
 {
     if(len != 3) return;
 
-    memcpy(Ep3Buffer, packet, len);
+    memcpy(Ep2Buffer, packet, len);
     UEP2_T_LEN = len;
     UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;
 }
@@ -64,17 +63,28 @@ void ResponseConfigurePacket(uint8_t * packet, uint8_t len)
     UEP3_CTRL = UEP3_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;
 }
 
-void EP3_OUT()
+void UARTInterrupt(void) __interrupt INT_NO_UART1
 {
-    PrintHex(Ep3Buffer, USB_RX_LEN);
+    if(U1RI) uart_recv();
 }
 
+
+void EP3_OUT()
+{
+    uint8_t checksum = 0x00;
+    for(int i=1;i<61;i++)
+    {
+        checksum += Ep3Buffer[i];
+    }
+    Ep3Buffer[61] = checksum;
+    uart_send(PACKET_KEYMAP, Ep3Buffer, 62);
+}
+
+// LED状态下传
 void EP1_OUT()
 {
-    // 既可以从EP0端点的SET_CONFIGURATION获取下传的报告值
-    // 也可以从EPn的OUT输出获取下传的报告值
     uint8_t datalen = USB_RX_LEN;
-    TXD1 = !(Ep1Buffer[0] & 0x02);
+    uart_send(PACKET_LED, Ep1Buffer, 1);
 }
 
 
@@ -82,18 +92,17 @@ void main()
 {
     CfgSysClock();
     DelayMs(5);                                                          //修改主频等待内部晶振稳定,必加
-    InitUART();                                                        //串口0初始化
+    // InitUART();                                                        //串口0初始化
+    uart_init();
     DelayMs(5);
-    printf_tiny("Build %s %s\n", __TIME__, __DATE__);
+    // printf_tiny("Build %s %s\n", __TIME__, __DATE__);
 
     USBDeviceInit();                                                      //USB设备模式初始化
     EA = 1;                                                               //允许单片机中断
     UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
     UEP2_T_LEN = 0;                                                       //预使用发送长度一定要清空
-    // FLAG = 0;
-    // Ready = 0;
 
-    P1_DIR_PU &= 0x0C;
+    uart_send(PACKET_PING, NULL, 0);
 
     while(1)
     {

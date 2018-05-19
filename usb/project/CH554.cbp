@@ -63,6 +63,11 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../system.h" />
+		<Unit filename="../uart.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../uart.h" />
+		<Unit filename="../usb_comm.h" />
 		<Unit filename="../usb_descriptor.h" />
 		<Extensions>
 			<code_completion />

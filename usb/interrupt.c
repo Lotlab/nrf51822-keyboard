@@ -1,6 +1,6 @@
 #include "endpoints.h"
 #include "CH554_SDCC.h"
-#include <stdio.h>
+// #include <stdio.h>
 
 const __code void (*EndpointPacketOutHandler[5])(void) = {
     USB_OUT_EP0,
