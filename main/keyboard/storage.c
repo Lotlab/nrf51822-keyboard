@@ -26,12 +26,12 @@ static void eeconfig_set_default()
 {
     config_buffer[0] = EECONFIG_MAGIC_NUMBER >> 8;
     config_buffer[1] = EECONFIG_MAGIC_NUMBER % 0x100;
-    config_buffer[*EECONFIG_DEBUG] = 0;
-    config_buffer[*EECONFIG_DEFAULT_LAYER] = 0;
-    config_buffer[*EECONFIG_KEYMAP] = 0;
-    config_buffer[*EECONFIG_MOUSEKEY_ACCEL] = 0;
+    config_buffer[2] = 0;
+    config_buffer[3] = 0;
+    config_buffer[4] = 0;
+    config_buffer[5] = 0;
 #ifdef BACKLIGHT_ENABLE
-    config_buffer[*EECONFIG_BACKLIGHT] = 0;
+    config_buffer[6] = 0;
 #endif
 }
 
@@ -64,44 +64,44 @@ void eeconfig_disable(void)
 
 uint8_t eeconfig_read_debug(void)
 {
-    return config_buffer[*EECONFIG_DEBUG];
+    return config_buffer[2];
 }
 
 void eeconfig_write_debug(uint8_t val)
 {
-    config_buffer[*EECONFIG_DEBUG] = val;    
+    config_buffer[2] = val;    
     config_update();
 }
 
 uint8_t eeconfig_read_default_layer(void)
 {
-    return config_buffer[*EECONFIG_DEFAULT_LAYER];
+    return config_buffer[3];
 }
 
 void eeconfig_write_default_layer(uint8_t val)
 {
-    config_buffer[*EECONFIG_DEFAULT_LAYER] = val;    
+    config_buffer[3] = val;    
     config_update();
 }
 
 uint8_t eeconfig_read_keymap(void)
 {
-    return config_buffer[*EECONFIG_KEYMAP];
+    return config_buffer[4];
 }
 void eeconfig_write_keymap(uint8_t val)
 {
-    config_buffer[*EECONFIG_KEYMAP] = val;
+    config_buffer[4] = val;
     config_update();
 }
 
 #ifdef BACKLIGHT_ENABLE
 uint8_t eeconfig_read_backlight(void)
 {
-    return config_buffer[*EECONFIG_BACKLIGHT];
+    return config_buffer[6];
 }
 void eeconfig_write_backlight(uint8_t val)
 {
-    config_buffer[*EECONFIG_BACKLIGHT] = val;
+    config_buffer[6] = val;
     config_update();
 }
 #endif

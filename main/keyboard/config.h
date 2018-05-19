@@ -54,7 +54,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     #define MATRIX_ROWS 5
     #define MATRIX_COLS 14
     
-    #define KEYBOARD_DEBUG
+    //#define KEYBOARD_DEBUG
     #define KEYBOARD_REVA
     
     #define UART_SUPPORT

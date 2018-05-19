@@ -2,6 +2,7 @@
 #define __UART_DRIVER__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @brief
@@ -34,7 +35,9 @@ typedef enum {
 #define UART_BAUDRATE NRF_UART_BAUDRATE_57600
 
 void uart_init(void);
-void uart_deinit(void);
+void uart_sleep_prepare(void);
 void uart_send_packet(packet_type type, uint8_t * data, uint8_t len);
+void uart_set_evt_handler(void (*evt)(bool));
+extern bool uart_enable;
 
 #endif

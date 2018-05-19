@@ -15,6 +15,7 @@
 
 bool m_led_state[3] = {false};                    /**< LED State. */
 bool counting;
+bool led_autooff = true;
 APP_TIMER_DEF(led_off);
 
 /**
@@ -46,9 +47,12 @@ void led_notice(uint8_t num, uint8_t type)
     {
         case 0:
             set_led_num(num);
-            if(counting) app_timer_stop(led_off);
-            app_timer_start(led_off, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
-            counting = true;
+            if(led_autooff)
+            {
+                if(counting) app_timer_stop(led_off);
+                app_timer_start(led_off, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
+                counting = true;
+            }
         break;
         case 1:
             set_led_num(0x07);
@@ -117,3 +121,13 @@ void led_init(void)
 #endif
     app_timer_create(&led_off, APP_TIMER_MODE_SINGLE_SHOT, led_turnoff);
 }
+
+void led_powersave_mode(bool powersave)
+{
+    led_autooff = powersave;
+    if(!powersave)
+    {
+        led_change_handler(0x00,false);
+    }
+}
+

@@ -6,6 +6,7 @@
  * @date 2018-05-18
  */
 #include <string.h>
+#ifdef UART_SUPPORT
 #include "uart_driver.h"
 #include "app_error.h"
 #include "app_uart.h"
@@ -32,14 +33,27 @@ typedef enum {
 state current;
 uint8_t len,pos;
 uint8_t recv_buff[64];
-//串口状态
-state uart_state = STATE_DATA;
+bool uart_enable = false;
 bool volatile ping_state;
 
 APP_TIMER_DEF(uart_check_timer);
 void uart_task(void *p_context);
+void uart_to_idle(void);
+
+
+void (* state_change_evt_handler)(bool);
 
 #define UART_CHECK_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
+
+void uart_set_evt_handler(void (*evt)(bool))
+{
+    state_change_evt_handler = evt;
+}
+
+void uart_state_change_invoke(bool state)
+{
+    (*state_change_evt_handler)((bool)state);
+}
 
 /**
  * @brief UART应答
@@ -212,7 +226,13 @@ void uart_init()
     err_code = app_timer_start(uart_check_timer, UART_CHECK_INTERVAL, NULL);
     APP_ERROR_CHECK(err_code);
     
-    uart_init_hardware();
+    uart_to_idle();
+    //uart_task(NULL);
+    if(nrf_gpio_pin_read(UART_RXD)) // 状态改变了
+    {
+        uart_init_hardware();
+        uart_enable = true;
+    }
 }
 
 
@@ -238,7 +258,7 @@ void uart_send(uint8_t * data, uint8_t len)
  */
 void uart_send_packet(packet_type type, uint8_t * data, uint8_t len)
 {
-    if(uart_state == STATE_DATA)
+    if(uart_enable)
     {
         app_uart_put(len + 1);
         app_uart_put(type);
@@ -246,42 +266,45 @@ void uart_send_packet(packet_type type, uint8_t * data, uint8_t len)
     }
 }
 
+void uart_to_idle()
+{
+    app_uart_close();
+    nrf_gpio_cfg_input(UART_RXD, NRF_GPIO_PIN_PULLDOWN);
+}
+
 /**
  * @brief 取消串口使能
  * 
  */
-void uart_deinit()
+void uart_sleep_prepare()
 {
-    app_uart_close();
-}
-
-void uart_to_idle()
-{
-    uart_deinit();
-    nrf_gpio_cfg_input(UART_RXD, NRF_GPIO_PIN_PULLDOWN);
+    uart_to_idle();
+    nrf_gpio_cfg_sense_input(UART_RXD, NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
 }
 
 void uart_task(void *p_context)
 {
     (void)p_context;
-    switch(uart_state)
+    if(uart_enable)
     {
-        case STATE_IDLE:
-            if(nrf_gpio_pin_read(UART_RXD)) // 状态改变了
-            {
-                uart_init_hardware();
-                uart_state = STATE_DATA;
-            }
-            break;
-        case STATE_DATA:
-            if(!ping_state) // 没有收到ping包
-            {
-                uart_state = STATE_IDLE;
-                uart_to_idle();
-            }
-            ping_state = false;
-        break;
+        if(!ping_state) // 没有收到ping包
+        {
+            uart_enable = false;
+            uart_to_idle();
+            uart_state_change_invoke(uart_enable);
+        }
+        ping_state = false;
     }
-    
+    else
+    {
+        if(nrf_gpio_pin_read(UART_RXD)) // 状态改变了
+        {
+            uart_init_hardware();
+            uart_enable = true;
+            uart_state_change_invoke(uart_enable);
+        }
+    }
 }
+
+#endif
 

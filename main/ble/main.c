@@ -252,9 +252,14 @@ void hook_bootmagic()
     if(!bootmagic_scan_key(BOOTMAGIC_KEY_BOOT))
     {
         // Yes, 如果没有按下Space+U，那就不开机。
-    #ifndef KEYBOARD_DEBUG
-        sleep_mode_enter(false);
-    #endif
+        #ifdef UART_SUPPORT
+        if(!uart_enable) // 插入了USB，则直接开机
+        #endif
+        {
+        #ifndef KEYBOARD_DEBUG
+            sleep_mode_enter(false);
+        #endif
+        }
     }
     if(bootmagic_scan_key(BOOTMAGIC_KEY_ERASE_BOND))
     {
@@ -293,7 +298,7 @@ void sleep_mode_enter(bool notice)
     else led_notice(0x00, false);
     matrix_sleep_prepare();
 #ifdef UART_SUPPORT
-    uart_deinit();
+    uart_sleep_prepare();
 #endif
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
@@ -387,7 +392,28 @@ static void power_manage(void)
     uint32_t err_code = sd_app_evt_wait();
     APP_ERROR_CHECK(err_code);
 }
+#ifdef UART_SUPPORT
 
+void uart_state_change(bool state)
+{
+    uint32_t err_code;
+    if(state)
+    {
+        
+        err_code = app_timer_stop(m_keyboard_sleep_timer_id);
+        APP_ERROR_CHECK(err_code);
+        led_powersave_mode(false);
+        keyboard_switch_scan_mode(false);
+    }
+    else
+    {
+        err_code = app_timer_start(m_keyboard_sleep_timer_id, KEYBOARD_FREE_INTERVAL, NULL);
+        APP_ERROR_CHECK(err_code);
+        led_powersave_mode(true);
+    }
+}
+
+#endif
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -408,11 +434,12 @@ int main(void)
     APP_ERROR_CHECK(err_code);
     
     keymap_init();
-	keyboard_init();
-    services_init();
 #ifdef UART_SUPPORT
+    uart_set_evt_handler(&uart_state_change);
     uart_init();
 #endif
+	keyboard_init();
+    services_init();
 
     // set driver after all module inited.
     host_set_driver(&driver);
@@ -423,7 +450,11 @@ int main(void)
     
     led_change_handler(0x01, true);
     led_notice(0x07, 0x00);
-
+    
+#ifdef UART_SUPPORT
+    uart_state_change(uart_enable);
+#endif
+    
     // Enter main loop.
     for (;;)
     {
