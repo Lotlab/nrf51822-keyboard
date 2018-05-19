@@ -42,12 +42,24 @@ void matrix_init(void)
 {
     for (uint_fast8_t i = MATRIX_ROWS; i--;)
     {
-        nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
+        // nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
     #ifndef MATRIX_HAS_GHOST
-        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] = GPIO_PIN_CNF_DRIVE_H0D1 ; //Set pin to be "Disconnected 0 and standard 1"
+        nrf_gpio_cfg(
+            (uint32_t)row_pin_array[i],
+            NRF_GPIO_PIN_DIR_OUTPUT,
+            NRF_GPIO_PIN_INPUT_DISCONNECT,
+            NRF_GPIO_PIN_NOPULL,
+            NRF_GPIO_PIN_S0D1,
+            NRF_GPIO_PIN_NOSENSE);
         nrf_gpio_pin_set((uint32_t)row_pin_array[i]);         //Set pin to low
     #else 
-        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] = GPIO_PIN_CNF_DRIVE_D0S1 ; //Set pin to be "Disconnected 0 and standard 1"
+        nrf_gpio_cfg(
+            (uint32_t)row_pin_array[i],
+            NRF_GPIO_PIN_DIR_OUTPUT,
+            NRF_GPIO_PIN_INPUT_DISCONNECT,
+            NRF_GPIO_PIN_NOPULL,
+            NRF_GPIO_PIN_D0S1,
+            NRF_GPIO_PIN_NOSENSE);
         nrf_gpio_pin_clear((uint32_t)row_pin_array[i]);         //Set pin to low
     #endif
         

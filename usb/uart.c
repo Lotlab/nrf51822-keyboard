@@ -65,10 +65,12 @@ void uart_data_parser(void)
         // 使用type位置暂存一下ID
         recv_buff[0] = 2;
         KeyboardExtraUpload(recv_buff, 3);
+        uart_ack();
         break;
     case PACKET_COMSUMER:
         recv_buff[0] = 3;
         KeyboardExtraUpload(recv_buff, 3);
+        uart_ack();
         break;
     case PACKET_GET_STATE:
         recv_buff[0] = CHARGING;

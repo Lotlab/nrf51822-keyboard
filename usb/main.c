@@ -102,10 +102,11 @@ void main()
     UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
     UEP2_T_LEN = 0;                                                       //预使用发送长度一定要清空
 
-    uart_send(PACKET_PING, NULL, 0);
+    TXD1 = 1;
 
     while(1)
     {
-        DelayMs(50);
+        uart_send(PACKET_PING, NULL, 0);
+        DelayMs(500);
     }
 }
