@@ -87,11 +87,21 @@ void EP1_OUT()
     uart_send(PACKET_LED, Ep1Buffer, 1);
 }
 
+void EnableWatchDog()
+{
+    SAFE_MOD = 0x55;
+    SAFE_MOD = 0xaa;                                                             //进入安全模式
+    GLOBAL_CFG |= bWDOG_EN;                                                    //启动看门狗复位
+    SAFE_MOD = 0x00;                                                             //退出安全模式
+    WDOG_COUNT = 0;                                                              //看门狗赋初值
+}
+
 
 void main()
 {
     CfgSysClock();
     DelayMs(5);                                                          //修改主频等待内部晶振稳定,必加
+    EnableWatchDog();
     // InitUART();                                                        //串口0初始化
     uart_init();
     DelayMs(5);
@@ -108,5 +118,6 @@ void main()
     {
         uart_send(PACKET_PING, NULL, 0);
         DelayMs(500);
+        WDOG_COUNT = 0x50;
     }
 }
