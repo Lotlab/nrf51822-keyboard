@@ -31,7 +31,7 @@ typedef enum {
     PACKET_ACK,
 } packet_type;
 
-#define UART_BAUDRATE NRF_UART_BAUDRATE_19200 
+#define UART_BAUDRATE NRF_UART_BAUDRATE_57600
 
 void uart_init(void);
 void uart_deinit(void);

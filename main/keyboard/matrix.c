@@ -187,13 +187,12 @@ void matrix_sleep_prepare(void)
     // 这里监听所有按键作为唤醒按键，所以真正的唤醒判断应该在main的初始化过程中
     for (uint8_t i = 0; i < MATRIX_COLS; i++)
     {
-        nrf_gpio_cfg_output((uint32_t)row_pin_array[i]);
-        nrf_gpio_pin_set((uint32_t)row_pin_array[i]);
+        nrf_gpio_cfg_output((uint32_t)column_pin_array[i]);
+        nrf_gpio_pin_set((uint32_t)column_pin_array[i]);
     }
     for (uint8_t i = 0; i < MATRIX_ROWS; i++)
     {
-        NRF_GPIO->PIN_CNF[(uint32_t)row_pin_array[i]] = GPIO_PIN_CNF_DRIVE_S0S1;
-        nrf_gpio_cfg_sense_input((uint32_t)column_pin_array[i], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
+        nrf_gpio_cfg_sense_input((uint32_t)row_pin_array[i], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
     }
 }
 

@@ -22,7 +22,7 @@
 #include "keymap_storage.h"
 
 uint8_t     rx_buf[64];
-uint8_t     tx_buf[64];
+uint8_t     tx_buf[128];
 
 typedef enum {
     STATE_IDLE, // 接收完毕
@@ -66,6 +66,9 @@ void uart_data_handler()
                 return;
             }
             uart_ack(true);
+            ping_state = true;
+            break;
+        case PACKET_ACK:
             ping_state = true;
             break;
         case PACKET_KEYMAP:
@@ -128,10 +131,7 @@ void uart_on_recv()
         case STATE_IDLE:
             app_uart_get(&len);
             pos = 0;
-            if(len != 0)
-                current = STATE_DATA;
-            else
-                uart_data_handler();
+            current = STATE_DATA;
         break;
         case STATE_DATA:
         {
@@ -163,6 +163,10 @@ void uart_evt_handler(app_uart_evt_t * p_event)
         break;
         
         case APP_UART_TX_EMPTY:
+        break;
+        
+        case APP_UART_FIFO_ERROR:
+            app_uart_flush();
         break;
         default:
             break;
