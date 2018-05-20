@@ -12,6 +12,8 @@
 - main：主程序
 - sdk：nRF SDK 10.0 的用到的源码文件
 - tmk_core：TMK源码
+- usb：双模的USB部分
+- KeymapDownloader：配列下载器
 
 ## 硬件
 
