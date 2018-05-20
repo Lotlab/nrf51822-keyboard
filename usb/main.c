@@ -57,9 +57,10 @@ void KeyboardExtraUpload(uint8_t * packet, uint8_t len)
 
 void ResponseConfigurePacket(uint8_t * packet, uint8_t len)
 {
-    if(len>64) return;
-    memcpy(&Ep3Buffer[64], packet, len);
-    UEP3_T_LEN = len;
+    if(len > 64) return;
+    Ep3Buffer[64] = 0x3f;
+    memcpy(&Ep3Buffer[65], packet, len);
+    UEP3_T_LEN = 5;
     UEP3_CTRL = UEP3_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;
 }
 
@@ -72,12 +73,12 @@ void UARTInterrupt(void) __interrupt INT_NO_UART1
 void EP3_OUT()
 {
     uint8_t checksum = 0x00;
-    for(int i=1;i<61;i++)
+    for(int i=1;i<62;i++)
     {
         checksum += Ep3Buffer[i];
     }
-    Ep3Buffer[61] = checksum;
-    uart_send(PACKET_KEYMAP, Ep3Buffer, 62);
+    Ep3Buffer[62] = checksum;
+    uart_send(PACKET_KEYMAP, &Ep3Buffer[1], 62);
 }
 
 // LED状态下传
@@ -116,8 +117,8 @@ void main()
 
     while(1)
     {
+        WDOG_COUNT = 0x50;
         uart_send(PACKET_PING, NULL, 0);
         DelayMs(500);
-        WDOG_COUNT = 0x50;
     }
 }

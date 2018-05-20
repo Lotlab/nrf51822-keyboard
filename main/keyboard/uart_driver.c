@@ -94,18 +94,18 @@ void uart_data_handler()
                 return;
             }
             
-            for(int i=2;i<63;i++)
+            for(int i=1;i<62;i++)
             {
                 checksum += recv_buff[i];
             }
-            if(checksum != recv_buff[63])
+            if(checksum != recv_buff[62])
             {
                 uart_ack(false);
             }
             else
             {
-                uint16_t id = recv_buff[2];
-                memcpy(&keymap_data[id * 60], &recv_buff[3], 60);
+                uint16_t id = recv_buff[1];
+                memcpy(&keymap_data[id * 60], &recv_buff[2], 60);
                 if(id >= 16)
                 {
                     keymap_write();

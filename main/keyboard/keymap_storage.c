@@ -25,7 +25,7 @@ uint8_t keymap_key_to_keycode(uint8_t layer, keypos_t key)
     if(layer >= 8 || key.col >= MATRIX_COLS || key.row >= MATRIX_ROWS)
         return KC_NO;
     if(KEYMAP_VALID)
-        return keymap_data[layer_offset + layer * layer_size + key.row * MATRIX_ROWS + key.col];
+        return keymap_data[layer_offset + layer * layer_size + key.row * MATRIX_COLS + key.col];
     else
         return keymaps[layer][key.row][key.col];
 }
