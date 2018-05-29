@@ -34,8 +34,8 @@ action_t keymap_fn_to_action(uint8_t keycode)
 {
     if(KEYMAP_VALID)
     {
-        uint8_t index = layer_offset + FN_INDEX(keycode) * 2;
-        uint16_t action = (keymap_data[index] << 8) + keymap_data[index + 1]; 
+        uint8_t index = fn_offset + FN_INDEX(keycode) * 2;
+        uint16_t action = ((uint16_t)keymap_data[index + 1] << 8) + keymap_data[index]; 
         return (action_t)action;
     }
     else
