@@ -33,7 +33,11 @@ typedef enum {
 state current;
 uint8_t len,pos;
 uint8_t recv_buff[64];
+
 bool uart_enable = false;
+bool usb_enable = false;
+keyboard_mode kbd_mode;
+
 bool volatile ping_state;
 
 APP_TIMER_DEF(uart_check_timer);
@@ -65,6 +69,15 @@ void uart_ack(bool success)
     uart_send_packet(success ? PACKET_ACK : PACKET_FAIL, NULL, 0);
 }
 
+void uart_usb_change(bool state)
+{
+    if(usb_enable != state)
+    {
+        usb_enable = state;
+        kbd_mode = state ? KEYBOARD_MODE_USB : KEYBOARD_MODE_BLE;
+    }        
+}
+
 /**
  * @brief UART包处理
  * 
@@ -80,9 +93,16 @@ void uart_data_handler()
                 return;
             }
             uart_ack(true);
+            uart_usb_change(false);
             ping_state = true;
             break;
         case PACKET_ACK:
+            ping_state = true;
+            break;
+        case PACKET_USB_STATUS:
+            if(len - 1 != 0)return;
+            uart_ack(true);
+            uart_usb_change(true);
             ping_state = true;
             break;
         case PACKET_KEYMAP:
@@ -270,6 +290,7 @@ void uart_to_idle()
 {
     app_uart_close();
     nrf_gpio_cfg_input(UART_RXD, NRF_GPIO_PIN_PULLDOWN);
+    usb_enable = false;
 }
 
 /**

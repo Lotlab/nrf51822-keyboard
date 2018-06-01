@@ -7,7 +7,9 @@
  */
 #include <stdint.h>
 #include "keyboard_fn.h"
+
 #include "main.h"
+#include "uart_driver.h"
 
 void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
 {
@@ -16,15 +18,13 @@ void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
         case POWER_SLEEP:
             sleep_mode_enter(true);
         break;
-        case POWER_ON:
-            
-        break;
-        case CLEAR_BONDAGE:
-            
-        break;
-        
         case SWITCH_DEVICE:
-            
+            #ifdef UART_SUPPORT
+            if(kbd_mode == KEYBOARD_MODE_BLE)
+                kbd_mode = KEYBOARD_MODE_USB;
+            else 
+                kbd_mode = KEYBOARD_MODE_BLE;
+            #endif
         break;
         default:
             break;

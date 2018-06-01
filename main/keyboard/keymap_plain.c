@@ -23,13 +23,17 @@ const uint8_t keymaps[2][MATRIX_ROWS][MATRIX_COLS] = {
     KEYMAP( \
          TRNS, F11, F12,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS, TRNS,  TRNS, TRNS, TRNS, FN1, \
               TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P7,  P8,  P9, PAST,  TRNS, TRNS, TRNS, TRNS, \
-         TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P4,  P5,  P6, PMNS,  TRNS, TRNS, TRNS, TRNS, \
+         FN2,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P4,  P5,  P6, PMNS,  TRNS, TRNS, TRNS, TRNS, \
          TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P1,  P2,  P3, PPLS,  TRNS,     PENT,   TRNS, \
          TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,  P0,   TRNS, PDOT,  PSLS,  TRNS, TRNS, TRNS, \
          RCTL,FN0, LGUI,TRNS,       TRNS,           TRNS, TRNS,  TRNS,  TRNS, TRNS, TRNS ),       
 };
 
-const action_t PROGMEM fn_actions[] = {ACTION_LAYER_MOMENTARY(1), ACTION_FUNCTION(POWER_SLEEP)};
+const action_t PROGMEM fn_actions[] = {
+    ACTION_LAYER_MOMENTARY(1), 
+    ACTION_FUNCTION(POWER_SLEEP),
+    ACTION_FUNCTION(SWITCH_DEVICE)
+};
 
 #endif
 
@@ -43,26 +47,10 @@ const uint8_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         CAPS,A,   S,   D,   F,   G,   H,   J,   K,   L,   SCLN,QUOT,     ENT,  \
         LSFT,Z,   X,   C,   V,   B,   N,   M,   COMM,DOT, SLSH,          RSFT, \
         LCTL,LGUI,LALT,          SPC,                     FN0, RGUI,APP, RCTL),
-    /* 1: Poker Fn
-     * ,-----------------------------------------------------------.
-     * |Esc| F1| F2| F3| F4| F5| F6| F7| F8| F9|F10|F11|F12|       |
-     * |-----------------------------------------------------------|
-     * |     |FnQ| Up|   |   |   |   |   |   |Cal|   |Hom|Ins|FnL  |
-     * |-----------------------------------------------------------|
-     * |      |Lef|Dow|Rig|   |   |Psc|Slk|Pau|   |Tsk|End|        |
-     * |-----------------------------------------------------------|
-     * |        |Del|   |Web|Mut|VoU|VoD|   |PgU|PgD|Del|          |
-     * |-----------------------------------------------------------|
-     * |    |    |    |         FnS            |    |    |    |    |
-     * `-----------------------------------------------------------'
-     * Fn:  to Fn overlay
-     * FnL: to Layout selector overaly
-     * FnQ: toggle Esc overlay
-     * FnS: toggle Arrow overlay
-     */
+    /* 1: Poker Fn */
     KEYMAP_ANSI(
         ESC, F1,  F2,  F3,  F4,  F5,  F6,  F7,  F8,  F9,  F10, F11, F12, DEL, \
-        TRNS,TRNS, UP, TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,CALC,TRNS,HOME,INS, TRNS,  \
+        FN2,TRNS, UP, TRNS,TRNS,TRNS,TRNS,TRNS,TRNS,CALC,TRNS,HOME,INS, TRNS,  \
         FN1,LEFT,DOWN,RGHT,TRNS,TRNS,PSCR,SLCK,PAUS,TRNS,TRNS,END,      TRNS, \
         TRNS,DEL, TRNS,WHOM,MUTE,VOLU,VOLD,TRNS,PGUP,PGDN,DEL,           TRNS, \
         TRNS,TRNS,TRNS,          TRNS,                     TRNS,TRNS,TRNS,TRNS),
@@ -70,7 +58,8 @@ const uint8_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 const action_t PROGMEM fn_actions[] = {
     /* Poker Layout */
     ACTION_LAYER_MOMENTARY(1),  // to Fn overlay
-    ACTION_FUNCTION(POWER_SLEEP) // sleep
+    ACTION_FUNCTION(POWER_SLEEP), // sleep
+    ACTION_FUNCTION(SWITCH_DEVICE)
 };
 
 #endif

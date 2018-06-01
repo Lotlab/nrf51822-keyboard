@@ -9,6 +9,7 @@ typedef enum {
     PACKET_LED,
     PACKET_CHARGING,
     PACKET_KEYMAP,
+    PACKET_USB_STATE,
 
 
     // uart tx

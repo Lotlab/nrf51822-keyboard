@@ -9,6 +9,7 @@
 #include "usb_comm.h"
 #include "uart.h"
 
+bool usb_evt = false;
 
 /** \brief CH554软复位
  *
@@ -35,6 +36,7 @@ void CH554USBDevWakeup( )
 void DeviceInterrupt( void ) __interrupt INT_NO_USB __using 1                   //USB中断服务程序,使用寄存器组1
 {
     UsbIsr();
+    usb_evt = true;
 }
 
 void KeyboardGenericUpload(uint8_t * packet, uint8_t len)
@@ -102,7 +104,6 @@ void main()
 {
     CfgSysClock();
     DelayMs(5);                                                          //修改主频等待内部晶振稳定,必加
-    EnableWatchDog();
     // InitUART();                                                        //串口0初始化
     uart_init();
     DelayMs(5);
@@ -113,12 +114,12 @@ void main()
     UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
     UEP2_T_LEN = 0;                                                       //预使用发送长度一定要清空
 
-    TXD1 = 1;
-
     while(1)
     {
-        WDOG_COUNT = 0x50;
-        uart_send(PACKET_PING, NULL, 0);
+        if(usb_evt)
+            uart_send(PACKET_USB_STATE, NULL, 0);
+        else
+            uart_send(PACKET_PING, NULL, 0);
         DelayMs(500);
     }
 }

@@ -32,10 +32,12 @@ static uint8_t keyboard_leds()
 }
 static void send_keyboard(report_keyboard_t * report)
 {
-    hids_keys_send(KEYBOARD_REPORT_SIZE, report->raw);
 #ifdef UART_SUPPORT
-    uart_send_packet(PACKET_KEYBOARD, report->raw, KEYBOARD_REPORT_SIZE);
+    if(USE_USB)
+        uart_send_packet(PACKET_KEYBOARD, report->raw, KEYBOARD_REPORT_SIZE);
+    else
 #endif
+    hids_keys_send(KEYBOARD_REPORT_SIZE, report->raw);
     hook_send_keyboard(report);
 }
 static void send_mouse(report_mouse_t * report)
@@ -44,15 +46,20 @@ static void send_mouse(report_mouse_t * report)
 }
 static void send_system(uint16_t data)
 {
-    hids_system_key_send(2,(uint8_t *)&data);
 #ifdef UART_SUPPORT
-    uart_send_packet(PACKET_SYSTEM, (uint8_t *)&data, 2);
+    if(USE_USB)
+        uart_send_packet(PACKET_SYSTEM, (uint8_t *)&data, 2);
+    else
 #endif
+    hids_system_key_send(2,(uint8_t *)&data);
 }
 static void send_consumer(uint16_t data)
 {
-    hids_consumer_key_send(2,(uint8_t *)&data);
+
 #ifdef UART_SUPPORT
-    uart_send_packet(PACKET_COMSUMER, (uint8_t *)&data, 2);
+    if(USE_USB)
+        uart_send_packet(PACKET_COMSUMER, (uint8_t *)&data, 2);
+    else
 #endif
+    hids_consumer_key_send(2,(uint8_t *)&data);
 }

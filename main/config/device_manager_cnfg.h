@@ -75,6 +75,12 @@
  *          Maximum value : 254.
  *          Dependencies  : None.
  */
+/**
+ * General Info				1
+ * DFU						?
+ * Battery					1?
+ * Keyboard Output & Input 	4
+ */
 #define DM_GATT_CCCD_COUNT               10
 
 
