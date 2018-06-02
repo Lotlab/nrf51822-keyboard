@@ -26,6 +26,14 @@ typedef enum {
 void uart_send(packet_type type, uint8_t * data, uint8_t len);
 void uart_recv(void);
 void uart_init(void);
+void uart_check(void);
+
+typedef enum {
+    STATE_IDLE, // 接收完毕
+    STATE_DATA, // 正在接收数据
+} uart_state;
+
+extern uart_state uart_rx_state;
 
 
 #endif // __UART__DRIVER__

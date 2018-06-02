@@ -2,20 +2,19 @@
 #include "CH554_SDCC.h"
 #include "usb_comm.h"
 #include "system.h"
+#include <stdbool.h>
 
 #define CHARGING UCC1
 #define STANDBY  UCC2
 
-typedef enum {
-    STATE_IDLE, // 接收完毕
-    STATE_DATA, // 正在接收数据
-} state;
-
-
-static state current;
+uart_state uart_rx_state;
 static uint8_t len,pos;
 static uint8_t __xdata recv_buff[64];
 static packet_type send_type;
+
+static bool uart_check_flag;
+
+void uart_send(packet_type type, uint8_t * data, uint8_t len);
 
 void uart_tx(uint8_t c)
 {
@@ -33,8 +32,20 @@ uint8_t uart_rx()
 
 void uart_ack()
 {
-    uart_tx(0);
-    uart_tx(PACKET_ACK);
+    uart_send(PACKET_ACK, 0, 0);
+}
+void uart_fail()
+{
+    uart_send(PACKET_FAIL, 0, 0);
+}
+
+uint8_t checksum()
+{
+    uint8_t sum = 0x00;
+
+    for(int i=1;i < len - 1;i++)
+        sum += recv_buff[i];
+    return sum == recv_buff[len - 1];
 }
 
 void uart_init()
@@ -44,6 +55,16 @@ void uart_init()
     U1REN = 1;                                                                   //串口0接收使能
     SBAUD1 = 256 - FREQ_SYS / 16 / 57600;
     IE_UART1 = 1;                                                               //启用串口中断
+}
+
+void uart_check()
+{
+    if(uart_check_flag && uart_rx_state == STATE_DATA)
+    {
+        // 超时强制退出
+        uart_rx_state = STATE_IDLE;
+    }
+    uart_check_flag = true;
 }
 
 void uart_data_parser(void)
@@ -58,8 +79,16 @@ void uart_data_parser(void)
         }
         break;
     case PACKET_KEYBOARD:
-        KeyboardGenericUpload(&recv_buff[1], len - 1);
-        uart_ack();
+        if(checksum())
+        {
+            KeyboardGenericUpload(&recv_buff[1], len - 2);
+            uart_ack();
+        }
+        else
+        {
+            uart_fail();
+        }
+
         break;
     case PACKET_SYSTEM:
         // 使用type位置暂存一下ID
@@ -82,18 +111,19 @@ void uart_data_parser(void)
 
 void uart_recv(void)
 {
-    switch(current)
+    switch(uart_rx_state)
     {
         case STATE_IDLE:
             len = uart_rx();
             pos = 0;
-            if(len > 0) current = STATE_DATA;
+            if(len > 0) uart_rx_state = STATE_DATA;
             else uart_data_parser();
         case STATE_DATA:
             recv_buff[pos++] = uart_rx();
+            uart_check_flag = false;
             if(pos >= len)
             {
-                current = STATE_IDLE;
+                uart_rx_state = STATE_IDLE;
                 uart_data_parser();
             }
             break;

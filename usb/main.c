@@ -8,6 +8,7 @@
 #include "interrupt.h"
 #include "usb_comm.h"
 #include "uart.h"
+#include "app_timer.h"
 
 bool usb_evt = false;
 
@@ -68,7 +69,17 @@ void ResponseConfigurePacket(uint8_t * packet, uint8_t len)
 
 void UARTInterrupt(void) __interrupt INT_NO_UART1
 {
-    if(U1RI) uart_recv();
+    if(U1RI)
+    {
+        uart_recv();
+        // U1RI = 0;
+    }
+/*
+    if(U1TI)
+    {
+        U1TI = 0;
+    }
+*/
 }
 
 
@@ -99,6 +110,30 @@ void EnableWatchDog()
     WDOG_COUNT = 0;                                                              //看门狗赋初值
 }
 
+void TimerInterrupt( void ) __interrupt INT_NO_TKEY
+{
+    TKEY_CTRL = 0;
+    timer_tick();
+}
+
+void ping_packet()
+{
+    if(uart_rx_state == STATE_IDLE)
+    {
+        if(usb_evt)
+            uart_send(PACKET_USB_STATE, NULL, 0);
+        else
+            uart_send(PACKET_PING, NULL, 0);
+    }
+}
+
+
+void timer_init()
+{
+    timer_create(&ping_packet, true, 500);
+    timer_create(&uart_check, true, 2);
+    IE_TKEY = 1;
+}
 
 void main()
 {
@@ -108,7 +143,7 @@ void main()
     uart_init();
     DelayMs(5);
     // printf_tiny("Build %s %s\n", __TIME__, __DATE__);
-
+    timer_init();
     USBDeviceInit();                                                      //USB设备模式初始化
     EA = 1;                                                               //允许单片机中断
     UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
@@ -116,10 +151,6 @@ void main()
 
     while(1)
     {
-        if(usb_evt)
-            uart_send(PACKET_USB_STATE, NULL, 0);
-        else
-            uart_send(PACKET_PING, NULL, 0);
-        DelayMs(500);
+        timer_task_exec();
     }
 }

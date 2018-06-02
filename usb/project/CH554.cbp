@@ -44,6 +44,10 @@
 		<ExtraCommands>
 			<Add after='cmd /c &quot;packihx &lt;$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).ihx &gt;$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).hex&quot;' />
 		</ExtraCommands>
+		<Unit filename="../app_timer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../app_timer.h" />
 		<Unit filename="../descriptor.c">
 			<Option compilerVar="CC" />
 		</Unit>
