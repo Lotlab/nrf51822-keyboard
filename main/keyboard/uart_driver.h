@@ -6,6 +6,8 @@
 
 #ifdef UART_SUPPORT
 
+#define UART_BAUDRATE NRF_UART_BAUDRATE_57600
+
 /**
  * @brief
  * @note 包格式为 Len TYPE DATA[Len-1]
@@ -35,21 +37,20 @@ typedef enum {
 } packet_type;
 
 typedef enum {
-    KEYBOARD_MODE_BLE,
-    KEYBOARD_MODE_USB
-} keyboard_mode;
-
-#define UART_BAUDRATE NRF_UART_BAUDRATE_57600
+    UART_MODE_IDLE,         // USB 未连接
+    UART_MODE_CHARGING,     // USB 已连接但尚未连接到主机
+    UART_MODE_USB,          // USB 主机已连接
+    UART_MODE_BLE_OVERRIDE  // USB 主机已连接但强制使用BLE模式通讯
+} uart_mode;
+extern uart_mode uart_current_mode;
 
 void uart_init(void);
 void uart_sleep_prepare(void);
 void uart_send_packet(packet_type type, uint8_t * data, uint8_t len);
 void uart_set_evt_handler(void (*evt)(bool));
-extern bool uart_enable;
-extern bool usb_enable;
-extern keyboard_mode kbd_mode;
+bool uart_is_using_usb(void);
+void uart_switch_mode(void);
 
-#define USE_USB (uart_enable && usb_enable && kbd_mode == KEYBOARD_MODE_USB)
 
 #endif
 

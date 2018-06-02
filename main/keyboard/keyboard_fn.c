@@ -13,20 +13,20 @@
 
 void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
 {
-    switch(id)
+    if(record->event.pressed)
     {
-        case POWER_SLEEP:
-            sleep_mode_enter(true);
-        break;
-        case SWITCH_DEVICE:
-            #ifdef UART_SUPPORT
-            if(kbd_mode == KEYBOARD_MODE_BLE)
-                kbd_mode = KEYBOARD_MODE_USB;
-            else 
-                kbd_mode = KEYBOARD_MODE_BLE;
-            #endif
-        break;
-        default:
+        switch(id)
+        {
+            case POWER_SLEEP:
+                sleep_mode_enter(true);
             break;
+            case SWITCH_DEVICE:
+                #ifdef UART_SUPPORT
+                uart_switch_mode();
+                #endif
+            break;
+            default:
+                break;
+        }
     }
 }

@@ -253,7 +253,7 @@ void hook_bootmagic()
     {
         // Yes, 如果没有按下Space+U，那就不开机。
         #ifdef UART_SUPPORT
-        if(!uart_enable) // 插入了USB，则直接开机
+        if(uart_current_mode == UART_MODE_IDLE) // 插入了USB，则直接开机
         #endif
         {
         #ifndef KEYBOARD_DEBUG
@@ -452,7 +452,7 @@ int main(void)
     led_notice(0x07, 0x00);
     
 #ifdef UART_SUPPORT
-    uart_state_change(uart_enable);
+    uart_state_change(uart_current_mode != UART_MODE_IDLE);
 #endif
     
     // Enter main loop.

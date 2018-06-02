@@ -33,7 +33,7 @@ static uint8_t keyboard_leds()
 static void send_keyboard(report_keyboard_t * report)
 {
 #ifdef UART_SUPPORT
-    if(USE_USB)
+    if(uart_is_using_usb())
         uart_send_packet(PACKET_KEYBOARD, report->raw, KEYBOARD_REPORT_SIZE);
     else
 #endif
@@ -47,7 +47,7 @@ static void send_mouse(report_mouse_t * report)
 static void send_system(uint16_t data)
 {
 #ifdef UART_SUPPORT
-    if(USE_USB)
+    if(uart_is_using_usb())
         uart_send_packet(PACKET_SYSTEM, (uint8_t *)&data, 2);
     else
 #endif
@@ -57,7 +57,7 @@ static void send_consumer(uint16_t data)
 {
 
 #ifdef UART_SUPPORT
-    if(USE_USB)
+    if(uart_is_using_usb())
         uart_send_packet(PACKET_COMSUMER, (uint8_t *)&data, 2);
     else
 #endif
