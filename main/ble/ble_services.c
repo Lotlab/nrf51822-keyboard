@@ -34,6 +34,10 @@
     #include "dfu_app_handler.h"
 #endif // BLE_DFU_APP_SUPPORT
 
+#ifdef UART_SUPPORT
+    #include "uart_driver.h"
+#endif
+
 #define DEVICE_NAME PRODUCT      /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME MANUFACTURER /**< Manufacturer. Will be passed to Device Information Service. */
 
@@ -340,7 +344,13 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     switch (ble_adv_evt)
     {
     case BLE_ADV_EVT_IDLE:
+    #ifdef UART_SUPPORT
+        if(uart_is_using_usb())
+            ble_advertising_start(BLE_ADV_MODE_SLOW);
+        else
+    #endif
         sleep_mode_enter(true);
+
         break;
 
     case BLE_ADV_EVT_WHITELIST_REQUEST:

@@ -392,6 +392,7 @@ static void power_manage(void)
     uint32_t err_code = sd_app_evt_wait();
     APP_ERROR_CHECK(err_code);
 }
+
 #ifdef UART_SUPPORT
 
 void uart_state_change(bool state)
@@ -399,7 +400,6 @@ void uart_state_change(bool state)
     uint32_t err_code;
     if(state)
     {
-        
         err_code = app_timer_stop(m_keyboard_sleep_timer_id);
         APP_ERROR_CHECK(err_code);
         led_powersave_mode(false);
@@ -412,8 +412,8 @@ void uart_state_change(bool state)
         led_powersave_mode(true);
     }
 }
-
 #endif
+
 /**@brief Function for application main entry.
  */
 int main(void)
