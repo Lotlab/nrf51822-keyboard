@@ -209,7 +209,6 @@ void uart_on_recv()
         if (recv.pos >= recv.len)
         {
             current = STATE_IDLE;
-            app_uart_flush();
 
             if (uart_packet_len_validator((packet_type)recv.command, recv.data_len))
                 uart_data_handler();
