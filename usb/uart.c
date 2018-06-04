@@ -109,6 +109,24 @@ void uart_data_parser(void)
     }
 }
 
+bool length_check(void)
+{
+    switch((packet_type)recv_buff[0])
+    {
+    case PACKET_KEYBOARD:
+        return len == 10;
+    case PACKET_SYSTEM:
+    case PACKET_COMSUMER:
+        return len == 3;
+    case PACKET_GET_STATE:
+    case PACKET_FAIL:
+    case PACKET_ACK:
+        return len == 1;
+    default:
+        return false;
+    }
+}
+
 void uart_recv(void)
 {
     switch(uart_rx_state)
@@ -124,7 +142,14 @@ void uart_recv(void)
             if(pos >= len)
             {
                 uart_rx_state = STATE_IDLE;
-                uart_data_parser();
+                if(length_check())
+                {
+                    uart_data_parser();
+                }
+                else
+                {
+                    uart_fail();
+                }
             }
             break;
     }

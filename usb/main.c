@@ -110,6 +110,11 @@ void EnableWatchDog()
     WDOG_COUNT = 0;                                                              //看门狗赋初值
 }
 
+void FeedWatchDog()
+{
+    WDOG_COUNT = 0x80;
+}
+
 void TimerInterrupt( void ) __interrupt INT_NO_TKEY
 {
     TKEY_CTRL = 0;
@@ -130,6 +135,7 @@ void ping_packet()
 
 void timer_init()
 {
+    timer_create(&FeedWatchDog, true, 500);
     timer_create(&ping_packet, true, 500);
     timer_create(&uart_check, true, 2);
     IE_TKEY = 1;
@@ -145,6 +151,7 @@ void main()
     // printf_tiny("Build %s %s\n", __TIME__, __DATE__);
     timer_init();
     USBDeviceInit();                                                      //USB设备模式初始化
+    EnableWatchDog();
     EA = 1;                                                               //允许单片机中断
     UEP1_T_LEN = 0;                                                       //预使用发送长度一定要清空
     UEP2_T_LEN = 0;                                                       //预使用发送长度一定要清空

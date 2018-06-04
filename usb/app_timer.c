@@ -1,6 +1,6 @@
 #include "app_timer.h"
 
-#define MAX_TIMER_SIZE 2
+#define MAX_TIMER_SIZE 3
 volatile __idata timer_info timers[MAX_TIMER_SIZE];
 uint8_t pos = 0;
 
