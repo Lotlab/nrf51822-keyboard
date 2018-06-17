@@ -336,7 +336,7 @@
               <MiscControls>--gnu --preinclude=config.h</MiscControls>
               <Define>BLE_STACK_SUPPORT_REQD SOFTDEVICE_PRESENT S110 NRF51 BLE_DFU_APP_SUPPORT</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk_core\common;..\..\ble\;..\..\keyboard\</IncludePath>
+              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk\tmk_core\common;..\..\ble\;..\..\keyboard\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2226,72 +2226,72 @@
             <File>
               <FileName>action.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action.c</FilePath>
             </File>
             <File>
               <FileName>action_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_layer.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_layer.c</FilePath>
             </File>
             <File>
               <FileName>action_macro.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_macro.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_macro.c</FilePath>
             </File>
             <File>
               <FileName>action_tapping.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_tapping.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_tapping.c</FilePath>
             </File>
             <File>
               <FileName>action_util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_util.c</FilePath>
             </File>
             <File>
               <FileName>debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\debug.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\debug.c</FilePath>
             </File>
             <File>
               <FileName>hook.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\hook.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\hook.c</FilePath>
             </File>
             <File>
               <FileName>host.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\host.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\host.c</FilePath>
             </File>
             <File>
               <FileName>keyboard.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keyboard.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keyboard.c</FilePath>
             </File>
             <File>
               <FileName>matrix.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\matrix.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\matrix.c</FilePath>
             </File>
             <File>
               <FileName>print.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\print.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\print.c</FilePath>
             </File>
             <File>
               <FileName>util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\util.c</FilePath>
             </File>
             <File>
               <FileName>keymap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keymap.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keymap.c</FilePath>
             </File>
             <File>
               <FileName>bootmagic.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\bootmagic.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\bootmagic.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -4804,7 +4804,7 @@
             <File>
               <FileName>action.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -4859,7 +4859,7 @@
             <File>
               <FileName>action_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_layer.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_layer.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -4914,7 +4914,7 @@
             <File>
               <FileName>action_macro.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_macro.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_macro.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -4969,7 +4969,7 @@
             <File>
               <FileName>action_tapping.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_tapping.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_tapping.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5024,7 +5024,7 @@
             <File>
               <FileName>action_util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_util.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5079,7 +5079,7 @@
             <File>
               <FileName>debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\debug.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\debug.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5134,7 +5134,7 @@
             <File>
               <FileName>hook.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\hook.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\hook.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5189,7 +5189,7 @@
             <File>
               <FileName>host.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\host.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\host.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5244,7 +5244,7 @@
             <File>
               <FileName>keyboard.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keyboard.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keyboard.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5299,7 +5299,7 @@
             <File>
               <FileName>matrix.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\matrix.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\matrix.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5354,7 +5354,7 @@
             <File>
               <FileName>print.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\print.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\print.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5409,7 +5409,7 @@
             <File>
               <FileName>util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\util.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5464,7 +5464,7 @@
             <File>
               <FileName>keymap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keymap.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keymap.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5519,7 +5519,7 @@
             <File>
               <FileName>bootmagic.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\bootmagic.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\bootmagic.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -6047,7 +6047,7 @@
               <MiscControls>--gnu --preinclude=config.h</MiscControls>
               <Define>BLE_STACK_SUPPORT_REQD SOFTDEVICE_PRESENT S110 NRF51 BLE_DFU_APP_SUPPORT BLE4100</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk_core\common;..\..\ble\;..\..\keyboard\</IncludePath>
+              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk\tmk_core\common;..\..\ble\;..\..\keyboard\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -7937,72 +7937,72 @@
             <File>
               <FileName>action.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action.c</FilePath>
             </File>
             <File>
               <FileName>action_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_layer.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_layer.c</FilePath>
             </File>
             <File>
               <FileName>action_macro.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_macro.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_macro.c</FilePath>
             </File>
             <File>
               <FileName>action_tapping.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_tapping.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_tapping.c</FilePath>
             </File>
             <File>
               <FileName>action_util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_util.c</FilePath>
             </File>
             <File>
               <FileName>debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\debug.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\debug.c</FilePath>
             </File>
             <File>
               <FileName>hook.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\hook.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\hook.c</FilePath>
             </File>
             <File>
               <FileName>host.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\host.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\host.c</FilePath>
             </File>
             <File>
               <FileName>keyboard.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keyboard.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keyboard.c</FilePath>
             </File>
             <File>
               <FileName>matrix.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\matrix.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\matrix.c</FilePath>
             </File>
             <File>
               <FileName>print.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\print.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\print.c</FilePath>
             </File>
             <File>
               <FileName>util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\util.c</FilePath>
             </File>
             <File>
               <FileName>keymap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keymap.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keymap.c</FilePath>
             </File>
             <File>
               <FileName>bootmagic.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\bootmagic.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\bootmagic.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -8480,7 +8480,7 @@
               <MiscControls>--gnu --preinclude=config.h</MiscControls>
               <Define>BLE_STACK_SUPPORT_REQD SOFTDEVICE_PRESENT S110 NRF51 BLE_DFU_APP_SUPPORT BLE60</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk_core\common;..\..\ble\;..\..\keyboard\</IncludePath>
+              <IncludePath>..\..\config;..\..\..\sdk;..\..\..\tmk\tmk_core\common;..\..\ble\;..\..\keyboard\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -10320,72 +10320,72 @@
             <File>
               <FileName>action.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action.c</FilePath>
             </File>
             <File>
               <FileName>action_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_layer.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_layer.c</FilePath>
             </File>
             <File>
               <FileName>action_macro.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_macro.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_macro.c</FilePath>
             </File>
             <File>
               <FileName>action_tapping.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_tapping.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_tapping.c</FilePath>
             </File>
             <File>
               <FileName>action_util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\action_util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\action_util.c</FilePath>
             </File>
             <File>
               <FileName>debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\debug.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\debug.c</FilePath>
             </File>
             <File>
               <FileName>hook.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\hook.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\hook.c</FilePath>
             </File>
             <File>
               <FileName>host.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\host.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\host.c</FilePath>
             </File>
             <File>
               <FileName>keyboard.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keyboard.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keyboard.c</FilePath>
             </File>
             <File>
               <FileName>matrix.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\matrix.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\matrix.c</FilePath>
             </File>
             <File>
               <FileName>print.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\print.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\print.c</FilePath>
             </File>
             <File>
               <FileName>util.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\util.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\util.c</FilePath>
             </File>
             <File>
               <FileName>keymap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\keymap.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\keymap.c</FilePath>
             </File>
             <File>
               <FileName>bootmagic.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\tmk_core\common\bootmagic.c</FilePath>
+              <FilePath>..\..\..\tmk\tmk_core\common\bootmagic.c</FilePath>
             </File>
           </Files>
         </Group>

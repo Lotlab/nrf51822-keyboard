@@ -27,7 +27,7 @@
 #include "pstorage.h"
 
 #include "bootloader_util.h"
-#include "../tmk_core/common/bootloader.h"
+#include "../tmk/tmk_core/common/bootloader.h"
 
 #ifdef BLE_DFU_APP_SUPPORT
     #include "ble_dfu.h"
