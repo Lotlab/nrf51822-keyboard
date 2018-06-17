@@ -374,7 +374,7 @@ void uart_send_packet(packet_type type, uint8_t *data, uint8_t len)
         
         tx_resend_buf[0] = type;
         tx_resend_buf[1] = len;
-        memcpy(data, &tx_resend_buf[2], len);
+        memcpy(&tx_resend_buf[2], data, len);
     }
 }
 

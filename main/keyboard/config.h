@@ -105,6 +105,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BOOTMAGIC_ENABLE
 #define EXTRAKEY_ENABLE 
+#define USB_6KRO_ENABLE
 
 /* fix led state on android */
 #define LED_STATE_FIX

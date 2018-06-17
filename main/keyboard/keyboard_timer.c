@@ -32,8 +32,12 @@ inline
 uint32_t timer_read32()
 {
     uint32_t time;
+    // 24bit, 32768 tick per sec.
+    // so only 19 bits are valid.
+    
+    // but, tmk does not use 32bit timer
     app_timer_cnt_get(&time);
-    return time / 32; // 32768 times/s.
+    return time / 32;
 }
 
 inline
