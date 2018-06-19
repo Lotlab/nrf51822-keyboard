@@ -32,6 +32,7 @@
 #include "app_scheduler.h"
 #include "app_timer_appsh.h"
 #include "pstorage.h"
+#include "nrf_drv_wdt.h"
 
 #include "ble_services.h"
 #include "battery_service.h"
@@ -53,6 +54,7 @@
 #define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(KEYBOARD_FAST_SCAN_INTERVAL, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
 #define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(KEYBOARD_SLOW_SCAN_INTERVAL, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
 #define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)                /**< 键盘Tick计时器 */
+#define KEYBOARD_WDT_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -62,11 +64,13 @@
 
 APP_TIMER_DEF(m_keyboard_scan_timer_id);
 APP_TIMER_DEF(m_keyboard_sleep_timer_id);
+APP_TIMER_DEF(m_keyboard_wdt_timer_id);
 
 static uint8_t passkey_enter_index = 0;
 static uint8_t passkey_entered[6];
 
 static uint16_t sleep_timer_counter = 0;
+static nrf_drv_wdt_channel_id m_channel_id;
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -99,6 +103,7 @@ void service_error_handler(uint32_t nrf_error)
 
 static void keyboard_scan_timeout_handler(void *p_context);
 static void keyboard_sleep_timeout_handler(void *p_context);
+static void keyboard_wdt_timeout_handler(void *p_context);
 
 /**@brief 计时器初始化函数
  *
@@ -120,6 +125,12 @@ static void timers_init(void)
     err_code = app_timer_create(&m_keyboard_sleep_timer_id,
                                 APP_TIMER_MODE_REPEATED,
                                 keyboard_sleep_timeout_handler);
+
+    APP_ERROR_CHECK(err_code);
+    
+    err_code = app_timer_create(&m_keyboard_wdt_timer_id,
+                                APP_TIMER_MODE_REPEATED,
+                                keyboard_wdt_timeout_handler);
 
     APP_ERROR_CHECK(err_code);
 }
@@ -280,6 +291,9 @@ static void timers_start(void)
 
     err_code = app_timer_start(m_keyboard_sleep_timer_id, KEYBOARD_FREE_INTERVAL, NULL);
     APP_ERROR_CHECK(err_code);
+    
+    err_code = app_timer_start(m_keyboard_wdt_timer_id, KEYBOARD_WDT_INTERVAL, NULL);
+    APP_ERROR_CHECK(err_code);
 
     battery_timer_start();
 }
@@ -385,6 +399,25 @@ static void buttons_leds_init(void)
     led_init();
 }
 
+static void wdt_evt(void){}
+
+static void wdt_init(void)
+{
+    uint32_t err_code;
+    nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
+    err_code = nrf_drv_wdt_init(&config, wdt_evt);
+    APP_ERROR_CHECK(err_code);
+    err_code = nrf_drv_wdt_channel_alloc(&m_channel_id);
+    APP_ERROR_CHECK(err_code);
+    nrf_drv_wdt_enable();
+}
+
+static void keyboard_wdt_timeout_handler(void *p_context)
+{
+    UNUSED_PARAMETER(p_context);
+    nrf_drv_wdt_channel_feed(m_channel_id);
+}
+
 /**@brief Function for the Power manager.
  */
 static void power_manage(void)
@@ -445,6 +478,7 @@ int main(void)
     host_set_driver(&driver);
     // Start execution.
     timers_start();
+    wdt_init();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
     

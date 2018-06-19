@@ -13,6 +13,8 @@
 #ifndef NRF_DRV_CONFIG_H
 #define NRF_DRV_CONFIG_H
 
+#include "app_util_platform.h"
+
 /* CLOCK */
 #define CLOCK_CONFIG_XTAL_FREQ          NRF_CLOCK_XTALFREQ_Default
 #define CLOCK_CONFIG_LF_SRC             NRF_CLOCK_LF_SRC_Xtal
@@ -322,7 +324,7 @@
 #endif
 
 /* WDT */
-#define WDT_ENABLED 0
+#define WDT_ENABLED 1
 
 #if (WDT_ENABLED == 1)
 #define WDT_CONFIG_BEHAVIOUR     NRF_WDT_BEHAVIOUR_RUN_SLEEP
