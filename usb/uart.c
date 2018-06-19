@@ -12,7 +12,7 @@ static uint8_t len,pos;
 static uint8_t __xdata recv_buff[64];
 static packet_type send_type;
 
-static bool uart_check_flag;
+static bool uart_check_flag, uart_arrive_flag;
 
 void uart_send(packet_type type, uint8_t * data, uint8_t len);
 
@@ -55,16 +55,6 @@ void uart_init()
     U1REN = 1;                                                                   //串口0接收使能
     SBAUD1 = 256 - FREQ_SYS / 16 / 57600;
     IE_UART1 = 1;                                                               //启用串口中断
-}
-
-void uart_check()
-{
-    if(uart_check_flag && uart_rx_state == STATE_DATA)
-    {
-        // 超时强制退出
-        uart_rx_state = STATE_IDLE;
-    }
-    uart_check_flag = true;
 }
 
 void uart_data_parser(void)
@@ -117,7 +107,7 @@ bool length_check(void)
         return len == 10;
     case PACKET_SYSTEM:
     case PACKET_COMSUMER:
-        return len == 3;
+        return len == 4;
     case PACKET_GET_STATE:
     case PACKET_FAIL:
     case PACKET_ACK:
@@ -127,32 +117,60 @@ bool length_check(void)
     }
 }
 
+void uart_check()
+{
+    if(uart_check_flag)
+    {
+        if(uart_rx_state == STATE_DATA)
+        {
+            // 接收超时强制退出并请求重发
+            uart_rx_state = STATE_IDLE;
+            // uart_fail();
+        }
+        else if((uart_rx_state == STATE_IDLE) && uart_arrive_flag)
+        {
+            uart_arrive_flag = false;
+            if(length_check())
+            {
+                uart_data_parser();
+            }
+            else
+            {
+                uart_fail();
+            }
+        }
+    }
+    uart_check_flag = true;
+}
+
+
 void uart_recv(void)
 {
+    /**
+     * Packet Format:
+     *     Len  Type   Data[0] ... Data[Len-2]
+     * Variable:
+     *     len  buf[0] buf[1]  ... Buf[Len-1]
+     */
     switch(uart_rx_state)
     {
         case STATE_IDLE:
             len = uart_rx();
             pos = 0;
-            if(len > 0) uart_rx_state = STATE_DATA;
-            else uart_data_parser();
+            if(len > 0) // Len=0 意味着出错了，别管它
+                uart_rx_state = STATE_DATA;
+            break;
+
         case STATE_DATA:
             recv_buff[pos++] = uart_rx();
-            uart_check_flag = false;
             if(pos >= len)
             {
                 uart_rx_state = STATE_IDLE;
-                if(length_check())
-                {
-                    uart_data_parser();
-                }
-                else
-                {
-                    uart_fail();
-                }
+                uart_arrive_flag = true;
             }
             break;
     }
+    uart_check_flag = false;
 }
 
 void uart_send(packet_type type, uint8_t * data, uint8_t len)

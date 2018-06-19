@@ -2035,6 +2035,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>nrf_drv_wdt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\sdk\nrf_drv_wdt.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4680,6 +4685,11 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>nrf_drv_wdt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\sdk\nrf_drv_wdt.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -7746,6 +7756,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>nrf_drv_wdt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\sdk\nrf_drv_wdt.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -10128,6 +10143,11 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>nrf_drv_wdt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\sdk\nrf_drv_wdt.c</FilePath>
             </File>
           </Files>
         </Group>
