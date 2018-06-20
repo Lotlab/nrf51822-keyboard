@@ -42,6 +42,9 @@ uint8_t __xdata __at (0x58) Ep3Buffer[2];  //端点3 IN缓冲区,必须是偶地
 uint8_t SetupReq,SetupLen,Ready,Count,SendFinish,UsbConfig;
 uint8_t *pDescr;
 uint8_t len = 0;
+// 键盘报文类型。0为Boot，1为Report
+uint8_t keyboard_protocol = 1;
+uint8_t keyboard_idle = 0;
 
 USB_SETUP_REQ   SetupReqBuf;                                                   //暂存Setup包
 #define UsbSetupBuf     ((PUSB_SETUP_REQ)Ep0Buffer)
@@ -241,16 +244,44 @@ void EP0_SETUP()
                 switch( SetupReq )
                 {
                     case 0x01://GetReport
+                        if(UsbSetupBuf->wIndexL == 0 && (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_INTERF)
+                        {
+                            len = 8;
+                            memcpy(Ep0Buffer, &Ep1Buffer[64], 8);
+                        }
                         break;
                     case 0x02://GetIdle
+                        if(UsbSetupBuf->wIndexL == 0 && (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_INTERF)
+                        {
+                            Ep0Buffer[0] = keyboard_idle;
+                            len = 1;
+                        }
                         break;
                     case 0x03://GetProtocol
+                        if(UsbSetupBuf->wIndexL == 0 && (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_INTERF)
+                        {
+                            Ep0Buffer[0] = keyboard_protocol;
+                            len = 1;
+                        }
                         break;
                     case 0x09://SetReport
+                        if(UsbSetupBuf->wIndexL == 0 && (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_INTERF)
+                        {
+                            Ep1Buffer[0] = Ep0Buffer[0];
+                            EP1_OUT();
+                        }
                         break;
                     case 0x0A://SetIdle
+                        if(UsbSetupBuf->wIndexL == 0 && (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_INTERF)
+                        {
+                            keyboard_idle = UsbSetupBuf->wValueH;
+                        }
                         break;
                     case 0x0B://SetProtocol
+                        if(UsbSetupBuf->wIndexL == 0 && (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_INTERF)
+                        {
+                            keyboard_protocol = UsbSetupBuf->wValueL;
+                        }
                         break;
                     default:
                         len = 0xFF;/*命令不支持*/
