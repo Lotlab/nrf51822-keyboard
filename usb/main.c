@@ -11,6 +11,7 @@
 #include "app_timer.h"
 
 bool usb_evt = false;
+bool usb_sleep = false;
 
 /** \brief CH554软复位
  *
@@ -43,6 +44,11 @@ void DeviceInterrupt( void ) __interrupt INT_NO_USB __using 1                   
 void KeyboardGenericUpload(uint8_t * packet, uint8_t len)
 {
     if(len != 8) return;
+
+    if(usb_sleep) {
+        usb_sleep = false;
+        CH554USBDevWakeup();
+    }
 
     memcpy(&Ep1Buffer[64], packet, len);
     UEP1_T_LEN = len;

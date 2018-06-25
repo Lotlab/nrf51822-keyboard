@@ -1,5 +1,6 @@
 #include "endpoints.h"
 #include "CH554_SDCC.h"
+#include "usb_comm.h"
 // #include <stdio.h>
 
 const __code void (*EndpointPacketOutHandler[5])(void) = {
@@ -92,6 +93,7 @@ void UsbBusSuspendEventHandler()
         UIF_SUSPEND = 0;
         if ( USB_MIS_ST & bUMS_SUSPEND )                                 //挂起
         {
+            usb_sleep = true;
         }
     }
     else                    //意外的中断，产生中断必然会设置此标志位
