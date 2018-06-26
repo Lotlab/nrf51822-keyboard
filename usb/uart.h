@@ -3,14 +3,14 @@
 
 #include <stdint.h>
 
-typedef enum {
+typedef enum
+{
     // uart rx
     PACKET_PING = 0x00,
     PACKET_LED,
     PACKET_CHARGING,
     PACKET_KEYMAP,
     PACKET_USB_STATE,
-
 
     // uart tx
     PACKET_KEYBOARD = 0x80,
@@ -23,17 +23,17 @@ typedef enum {
     PACKET_ACK,
 } packet_type;
 
-void uart_send(packet_type type, uint8_t * data, uint8_t len);
+void uart_send(packet_type type, uint8_t *data, uint8_t len);
 void uart_recv(void);
 void uart_init(void);
 void uart_check(void);
 
-typedef enum {
-    STATE_IDLE, // 接收完毕
-    STATE_DATA, // 正在接收数据
+typedef enum
+{
+    STATE_IDLE, // 鎺ユ敹瀹屾瘯
+    STATE_DATA, // 姝ｅ湪鎺ユ敹鏁版嵁
 } uart_state;
 
 extern uart_state uart_rx_state;
-
 
 #endif // __UART__DRIVER__

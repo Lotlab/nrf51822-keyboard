@@ -10,6 +10,6 @@
  * \return bool 是否为最后一个描述符
  *
  */
-extern uint8_t GetUsbDescriptor(uint8_t type1, uint8_t type2, uint8_t index, uint8_t * len, uint8_t ** strPtr);
+uint8_t GetUsbDescriptor(uint8_t type1, uint8_t type2, uint8_t index, uint8_t *len, uint8_t **strPtr);
 
 #endif // __DESCRIPTOR_H__

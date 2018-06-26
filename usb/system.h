@@ -6,6 +6,6 @@
 void InitUART();
 void CfgSysClock();
 void DelayMs(uint16_t n);
-void PrintHex(uint8_t * data, uint8_t len);
+void PrintHex(uint8_t *data, uint8_t len);
 
 #endif // __SYSTEM_H__

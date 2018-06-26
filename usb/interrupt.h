@@ -1,12 +1,12 @@
 #ifndef __INTERRUPT_H__
 #define __INTERRUPT_H__
 
-
 /** \brief USB 中断服务函数
  *
- * \return extern void
+ * \return void
  *
  */
-extern void UsbIsr();
+void UsbIsr();
+void UsbSuspendEvt();
 
 #endif // __INTERRUPT_H__

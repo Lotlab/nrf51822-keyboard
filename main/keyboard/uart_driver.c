@@ -24,7 +24,7 @@
 #include "keyboard_led.h"
 #include "keymap_storage.h"
 
-#define UART_CHECK_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
+#define UART_CHECK_INTERVAL APP_TIMER_TICKS(1500, APP_TIMER_PRESCALER)
 APP_TIMER_DEF(uart_check_timer);
 
 uint8_t rx_buf[64];

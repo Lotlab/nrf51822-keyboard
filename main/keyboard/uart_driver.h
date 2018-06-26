@@ -10,10 +10,11 @@
 
 /**
  * @brief
- * @note 包格式为 Len TYPE DATA[Len-1]
- *       Len: 除Len字节外的包长度
- *       Type: 包类型
- *       Data[]: 实际数据，长度为len-1
+ * @note Packet format: Len TYPE DATA[Len-1]
+ *       Len: the length of data and type, 
+ *       Type: packet type.
+ *       Data[]: data to transmit, last byte is the checksum. 
+ *               if the length of data is 0, checksum can be omitted.
  * 
  */
 
