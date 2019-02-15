@@ -178,10 +178,16 @@ void hids_init(void)
     p_input_report->max_len = INPUT_REPORT_KEYS_MAX_LEN;
     p_input_report->rep_ref.report_id = 1;
     p_input_report->rep_ref.report_type = BLE_HIDS_REP_TYPE_INPUT;
-
+	
+    #ifdef BLE_LINK_SEC
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.cccd_write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
+    #else
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.cccd_write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.write_perm);
+    #endif
     
     // system input report
     p_input_report = &input_report_array[SYSTEM_INPUT_REPORT_INDEX];
@@ -189,9 +195,18 @@ void hids_init(void)
     p_input_report->rep_ref.report_id = 2;
     p_input_report->rep_ref.report_type = BLE_HIDS_REP_TYPE_INPUT;
 
+	
+    #ifdef BLE_LINK_SEC
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.cccd_write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
+    #else
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.cccd_write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.write_perm);
+    #endif
+    
+
     
     // consumer input report
     p_input_report = &input_report_array[CONSUMER_INPUT_REPORT_INDEX];
@@ -199,9 +214,18 @@ void hids_init(void)
     p_input_report->rep_ref.report_id = 3;
     p_input_report->rep_ref.report_type = BLE_HIDS_REP_TYPE_INPUT;
 
+	
+    #ifdef BLE_LINK_SEC
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.cccd_write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_input_report->security_mode.write_perm);
+    #else
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.cccd_write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_input_report->security_mode.write_perm);
+    #endif
+    
+
 
     // keyboard output report
     p_output_report = &output_report_array[KEYBOARD_OUTPUT_REPORT_INDEX];
@@ -209,8 +233,17 @@ void hids_init(void)
     p_output_report->rep_ref.report_id = 1;
     p_output_report->rep_ref.report_type = BLE_HIDS_REP_TYPE_OUTPUT;
 
+	
+    #ifdef BLE_LINK_SEC
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_output_report->security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&p_output_report->security_mode.write_perm);
+    #else
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_output_report->security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&p_output_report->security_mode.write_perm);
+
+    #endif
+    
+
     
 
     // init main
@@ -235,15 +268,15 @@ void hids_init(void)
     hids_init_obj.hid_information.flags = hid_info_flags;
     hids_init_obj.included_services_count = 0;
     hids_init_obj.p_included_services_array = NULL;
-
+	
+    #ifdef BLE_LINK_SEC
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.rep_map.security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.rep_map.security_mode.write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.hid_information.security_mode.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.hid_information.security_mode.write_perm);
 
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(
-        &hids_init_obj.security_mode_boot_kb_inp_rep.cccd_write_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.cccd_write_perm);
+	BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.security_mode_boot_kb_inp_rep.write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.write_perm);
@@ -252,7 +285,24 @@ void hids_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_protocol.write_perm);
     BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.security_mode_ctrl_point.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_ENC_WITH_MITM(&hids_init_obj.security_mode_ctrl_point.write_perm);
+    #else
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.rep_map.security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.rep_map.security_mode.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.hid_information.security_mode.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.hid_information.security_mode.write_perm);
 
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.cccd_write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_inp_rep.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.security_mode_boot_kb_inp_rep.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_boot_kb_outp_rep.write_perm);
+
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_protocol.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_protocol.write_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&hids_init_obj.security_mode_ctrl_point.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_ENC_NO_MITM(&hids_init_obj.security_mode_ctrl_point.write_perm);
+	#endif
+	
     err_code = ble_hids_init(&m_hids, &hids_init_obj);
     APP_ERROR_CHECK(err_code);
     hids_buffer_init();
