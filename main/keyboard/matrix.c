@@ -18,6 +18,7 @@
 #include "matrix.h"
 #include "keyboard_matrix.h"
 #include "keyboard_conf.h"
+#include "custom_hook.h"
 #include "wait.h"
 
 #ifndef DEBOUNCE
@@ -95,7 +96,7 @@ static matrix_row_t read_cols(void)
 static void select_row(uint8_t row)
 {    
 #ifndef MATRIX_HAS_GHOST
-	nrf_gpio_pin_clear((uint32_t)row_pin_array[row]);
+    nrf_gpio_pin_clear((uint32_t)row_pin_array[row]);
 #else
     nrf_gpio_pin_set((uint32_t)row_pin_array[row]);
 #endif
@@ -134,6 +135,7 @@ uint8_t matrix_scan(void)
         matrix_row_t cols = read_cols();
         if (matrix_debouncing[i] != cols) {
             matrix_debouncing[i] = cols;
+            hook_key_change();
             if (debouncing) {
                 debug("bounce!: "); debug_hex(debouncing); debug("\n");
             }
