@@ -235,13 +235,24 @@ static void keyboard_scan_timeout_handler(void *p_context)
 	keyboard_task();
 }
 /**
- * @brief 键盘按键按下的Hook
+ * @brief 键盘扫描结果改变的Hook
  * 
  * @param event 
  */
 void hook_matrix_change(keyevent_t event)
 {
     keyboard_sleep_counter_reset();
+}
+/**
+ * @brief 键盘按键按下的Hook
+ * 
+ * @param event 
+ */
+void hook_key_change()
+{
+#ifdef SLOW_MODE_EARLY_EXIT
+    keyboard_sleep_counter_reset();
+#endif
 }
 /**
  * @brief 发送按键报文的Hook
