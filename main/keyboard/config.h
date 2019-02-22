@@ -61,7 +61,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     #define KEYBOARD_REVA
     
     #define UART_SUPPORT
-  //  #define BLE_LINK_SEC       //启用此选项，蓝牙配对时要求输入密码,并启用MITM
+    #define BLE_LINK_SEC       //启用此选项，蓝牙配对时要求输入密码,并启用MITM
 	
 #endif
 
