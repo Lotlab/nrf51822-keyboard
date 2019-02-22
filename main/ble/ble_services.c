@@ -73,8 +73,16 @@
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                                            /**< Number of attempts before giving up the connection parameter negotiation. */
 
 #define SEC_PARAM_BOND 1                                        /**< Perform bonding. */
-#define SEC_PARAM_MITM 1                                       /**< Man In The Middle protection not required. */
-#define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_KEYBOARD_ONLY /**< No I/O capabilities. */
+
+
+#ifdef BLE_LINK_SEC
+#define SEC_PARAM_MITM 1                                        /**< Man In The Middle protection required. */
+#define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_KEYBOARD_ONLY /**< Have I/O capabilities. */
+#else
+#define SEC_PARAM_MITM 0                                        /**< Man In The Middle protection not required. */
+#define SEC_PARAM_IO_CAPABILITIES BLE_GAP_IO_CAPS_NONE          /**< No I/O capabilities. */
+#endif
+
 #define SEC_PARAM_OOB 0                                         /**< Out Of Band data not available. */
 #define SEC_PARAM_MIN_KEY_SIZE 7                                /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE 16                               /**< Maximum encryption key size. */
