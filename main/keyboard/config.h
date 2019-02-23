@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PRODUCT_ID      0xEEEE
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    "Lotlab"
-#define DESCRIPTION     t.m.k. keyboard firmware for GH60
+#define DESCRIPTION     BLE keyboard base t.m.k firmware
 
 #ifdef KEYBOARD_4100
 
@@ -59,6 +59,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     
     //#define KEYBOARD_DEBUG
     #define KEYBOARD_REVA
+	//#define POWER_SAVE_MODE     //省电模式选项，启用此选项后键盘指示灯仅闪烁一次，不常亮
     
     #define UART_SUPPORT
     #define BLE_LINK_SEC       //启用此选项，蓝牙配对时要求输入密码,并启用MITM

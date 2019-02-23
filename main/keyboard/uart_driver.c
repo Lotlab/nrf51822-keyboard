@@ -147,9 +147,11 @@ void uart_data_handler()
     case PACKET_CHARGING:
         if (recv.data[0] == 0x00)
         { // full
+				set_battery_led(true);
         }
         else
         { // charging
+				set_battery_led(false);
         }
         break;
     case PACKET_FAIL:    
@@ -304,7 +306,11 @@ void uart_task(void *p_context)
             uart_current_mode = UART_MODE_CHARGING;
             uart_state_change_invoke();
         }
+		    set_blue_led(true);
     }
+		if (uart_is_using_usb()){
+				set_blue_led(false);
+		}
 }
 
 /**
@@ -409,9 +415,11 @@ void uart_switch_mode()
     {
         case UART_MODE_USB:
             uart_current_mode = UART_MODE_BLE_OVERRIDE;
+						set_blue_led(true);
             break;
         case UART_MODE_BLE_OVERRIDE:
             uart_current_mode = UART_MODE_USB;
+					  set_blue_led(false);
             break;
         default:
             break;

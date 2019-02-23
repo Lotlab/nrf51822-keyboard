@@ -15,8 +15,13 @@
 
 bool m_led_state[3] = {false};                    /**< LED State. */
 bool counting;
+#ifdef POWER_SAVE_MODE
 bool led_autooff = true;
+#else
+bool led_autooff = false;
+#endif
 APP_TIMER_DEF(led_off);
+
 
 /**
  * @brief 底层设置LED状态
@@ -33,6 +38,30 @@ void set_led_num(uint8_t num)
 #endif
 #ifdef LED_SCLK
     nrf_gpio_pin_write(LED_SCLK, num & 0x04);
+#endif
+}
+
+/**
+ * @brief 底层设置蓝牙LED指示灯状态
+ * 
+ * @param val 
+ */
+void set_blue_led(uint8_t val)
+{
+#ifdef LED_BLE
+    nrf_gpio_pin_write(LED_BLE, val);
+#endif
+}
+
+/**
+ * @brief 底层设置电池LED指示灯状态
+ * 
+ * @param val 
+ */
+void set_battery_led(uint8_t val)
+{
+#ifdef LED_BATT
+    nrf_gpio_pin_write(LED_BATT, val);
 #endif
 }
 
@@ -63,9 +92,9 @@ void led_notice(uint8_t num, uint8_t type)
     }
 }
 /**
- * @brief 设置LED状态
+ * @brief 设置三个键盘LED状态
  * 
- * @param usb_led 三个LED位的值
+ * @param usb_led 三个键盘LED位的值
  */
 void led_set(uint8_t usb_led)
 {
@@ -118,6 +147,12 @@ void led_init(void)
 #endif
 #ifdef LED_SCLK
     nrf_gpio_cfg_output(LED_SCLK);
+#endif
+#ifdef LED_BLE
+    nrf_gpio_cfg_output(LED_BLE);
+#endif
+#ifdef LED_BATT
+    nrf_gpio_cfg_output(LED_BATT);
 #endif
     app_timer_create(&led_off, APP_TIMER_MODE_SINGLE_SHOT, led_turnoff);
 }
