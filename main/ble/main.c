@@ -245,8 +245,6 @@ void hook_matrix_change(keyevent_t event)
 }
 /**
  * @brief 键盘按键按下的Hook
- * 
- * @param event 
  */
 void hook_key_change()
 {

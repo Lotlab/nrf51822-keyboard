@@ -25,6 +25,7 @@ static ble_bas_t m_bas; /**< Structure used to identify the battery service. */
 uint16_t adc_result_queue[ADC_RESULT_QUEUE_SIZE]; /**中值滤波**/
 uint8_t adc_result_queue_index;
 uint32_t currVot; /**< Current Vottage of battery. */
+bool slowMode = false;
 
 /**
  * @brief 初始化电量服务(BAS)
@@ -205,6 +206,14 @@ static uint16_t adc_result_calc()
     return total / (ADC_RESULT_QUEUE_SIZE - 2);
 }
 
+static void ADC_switch_to_slow_mode() {
+    err_code = app_timer_stop(m_battery_timer_id);
+    err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL_SLOW, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    slowMode = true;
+}
+
 /**
  * @brief ADC电量测量回调
  * 
@@ -223,15 +232,21 @@ static void ADC_appsh_mes_evt_handler(void *p_event_data, uint16_t event_size)
     }
     adc_result_queue[adc_result_queue_index++] = nrf_adc_result_get();
 
-    if (currVot == adc2vottage(adc_result_calc()) && currVot > 0) // 数据稳定后才延长测量间隔
+    if (slowMode)
     {
-        err_code = app_timer_stop(m_battery_timer_id);
-        err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL_SLOW, NULL);
-        APP_ERROR_CHECK(err_code);
+        // 数据已经稳定，可以直接计算上传
+        currVot = adc2vottage(adc_result_calc());
+        battery_level_update();
     }
-
-    currVot = adc2vottage(adc_result_calc());
-    battery_level_update();
+    else
+    {
+        // 数据尚未稳定，需要稳定后才延长测量间隔并上传
+        if (currVot == adc2vottage(adc_result_calc()) && currVot > 0) 
+        {
+            ADC_switch_to_slow_mode();
+            battery_level_update();
+        }
+    }
 }
 
 /**
