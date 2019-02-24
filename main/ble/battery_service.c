@@ -206,8 +206,12 @@ static uint16_t adc_result_calc()
     return total / (ADC_RESULT_QUEUE_SIZE - 2);
 }
 
+/**
+ * @brief 电量测量切换至慢速测量模式
+ * 
+ */
 static void ADC_switch_to_slow_mode() {
-    err_code = app_timer_stop(m_battery_timer_id);
+    uint32_t err_code = app_timer_stop(m_battery_timer_id);
     err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL_SLOW, NULL);
     APP_ERROR_CHECK(err_code);
 
@@ -224,7 +228,6 @@ static void ADC_appsh_mes_evt_handler(void *p_event_data, uint16_t event_size)
 {
     UNUSED_PARAMETER(p_event_data);
     UNUSED_PARAMETER(event_size);
-    uint32_t err_code;
 
     if (adc_result_queue_index >= ADC_RESULT_QUEUE_SIZE)
     {
