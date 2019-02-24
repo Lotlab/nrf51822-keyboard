@@ -96,6 +96,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 #define SLOW_MODE_EARLY_EXIT
 
+// LED自动熄灭时长(ms)，设为0则不自动熄灭
+#define LED_AUTOOFF_TIME 1000
+
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.

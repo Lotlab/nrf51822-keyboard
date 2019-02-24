@@ -23,6 +23,7 @@
 #include "keyboard_conf.h"
 #include "keyboard_led.h"
 #include "keymap_storage.h"
+#include "led.h"
 
 #define UART_CHECK_INTERVAL APP_TIMER_TICKS(1500, APP_TIMER_PRESCALER)
 APP_TIMER_DEF(uart_check_timer);
@@ -72,9 +73,35 @@ void uart_set_evt_handler(void (*evt)(bool))
     state_change_evt_handler = evt;
 }
 
+void uart_mode_change_invoke()
+{
+    switch (uart_current_mode)
+    {
+        case UART_MODE_IDLE:
+            led_set_bit(LED_BIT_FULL, 0);
+            led_set_bit(LED_BIT_CHARGING, 0);
+            led_set_bit(LED_BIT_USB, 0);
+            break;
+        case UART_MODE_CHARGING:
+            led_set_bit(LED_BIT_USB, 0);
+            break;
+        case UART_MODE_USB:
+            // led_set_bit(LED_BIT_BLE, 0);
+            led_set_bit(LED_BIT_USB, 1);
+            break;
+        case UART_MODE_BLE_OVERRIDE:
+            // led_set_bit(LED_BIT_BLE, 1);
+            led_set_bit(LED_BIT_USB, 0);
+            break;
+        default:
+            break;
+    }
+}
+
 void uart_state_change_invoke()
 {
     (*state_change_evt_handler)((bool)uart_current_mode != UART_MODE_IDLE);
+    uart_mode_change_invoke();
 }
 
 /**
@@ -135,11 +162,17 @@ void uart_data_handler()
         break;
     case PACKET_LED:
         led_val = recv.data[0];
-        led_change_handler(led_val, true);
+        led_set(led_val);
         break;
     case PACKET_CHARGING:
-        if (recv.data[0] == 0x00) { // full
-        } else { // charging
+        if (recv.data[0] == 0x00) {
+            // full
+            led_set_bit(LED_BIT_FULL, 1);
+            led_set_bit(LED_BIT_CHARGING, 0);
+        } else {
+            // charging
+            led_set_bit(LED_BIT_FULL, 0);
+            led_set_bit(LED_BIT_CHARGING, 1);
         }
         break;
     case PACKET_FAIL:
@@ -392,6 +425,7 @@ void uart_switch_mode()
     default:
         break;
     }
+    uart_mode_change_invoke();
 }
 
 #endif

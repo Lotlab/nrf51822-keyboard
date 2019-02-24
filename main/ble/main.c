@@ -305,9 +305,10 @@ void sleep_mode_enter(bool notice)
     uint32_t err_code;
 
     if (notice)
-        led_notice(0x00, true);
+        led_flash_all();
     else
-        led_notice(0x00, false);
+        led_off();
+
     matrix_sleep_prepare();
 #ifdef UART_SUPPORT
     uart_sleep_prepare();
@@ -476,12 +477,12 @@ int main(void)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-    led_change_handler(0x01, true);
-    led_notice(0x07, 0x00);
-
 #ifdef UART_SUPPORT
     uart_state_change(uart_current_mode != UART_MODE_IDLE);
 #endif
+
+    nrf_drv_wdt_channel_feed(m_channel_id);
+    led_flash_all_timer();
 
     // Enter main loop.
     for (;;) {

@@ -13,94 +13,111 @@
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 
-bool m_led_state[3] = { false }; /**< LED State. */
-bool counting;
-bool led_autooff = true;
-APP_TIMER_DEF(led_off);
+uint16_t led_state = 0x0000;
 
 /**
  * @brief 底层设置LED状态
  * 
  * @param num 
  */
-void set_led_num(uint8_t num)
+void led_set_state_ll(uint16_t num);
+
+/**
+ * @brief 闪烁所有LED
+ * 
+ */
+void led_flash_all(void)
 {
-#ifdef LED_NUM
-    nrf_gpio_pin_write(LED_NUM, num & 0x01);
-#endif
-#ifdef LED_CAPS
-    nrf_gpio_pin_write(LED_CAPS, num & 0x02);
-#endif
-#ifdef LED_SCLK
-    nrf_gpio_pin_write(LED_SCLK, num & 0x04);
-#endif
+    led_set_state_ll(0xFFFF);
+    nrf_delay_ms(100);
+    led_set_state_ll(0x0000);
+    nrf_delay_ms(100);
 }
 
-/**@brief Notice by Led
- *
- * @param[in]   num   led val.
- * @param[in]   type  flash type;
- */
-void led_notice(uint8_t num, uint8_t type)
-{
-    switch (type) {
-    case 0:
-        set_led_num(num);
-        if (led_autooff) {
-            if (counting)
-                app_timer_stop(led_off);
-            app_timer_start(led_off, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
-            counting = true;
-        }
-        break;
-    case 1:
-        set_led_num(0x07);
-        nrf_delay_ms(100);
-        set_led_num(num);
-        nrf_delay_ms(100);
-        break;
-    }
+void led_flash_all_off(void * p) {
+    led_off();
 }
+
 /**
- * @brief 设置LED状态
+ * @brief 使用Timer闪烁所有LED
+ * 
+ */
+void led_flash_all_timer(void) {
+    led_set_state_ll(0xFFFF);
+    APP_TIMER_DEF(single_timer);
+    app_timer_create(&single_timer, APP_TIMER_MODE_SINGLE_SHOT, led_flash_all_off);
+    app_timer_start(&single_timer, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
+}
+
+/**
+ * @brief 设置指定位置的LED状态
+ * 
+ * @param bit 位置
+ * @param state 状态
+ */
+void led_set_bit(enum led_bit_usage bit, bool state)
+{
+    uint16_t val = led_state;
+    if (state) {
+        val |= 1 << bit;
+    } else {
+        val &= ~(1 << bit);
+    }
+    led_change_handler(val);
+}
+
+/**
+ * @brief 设定指定范围内的LED状态
+ * 
+ * @param val LED状态
+ * @param mask 范围 mask
+ */
+void led_set_mask(uint16_t val, uint16_t mask)
+{
+    uint16_t state = (led_state | mask) + (val & mask);
+    led_change_handler(state);
+}
+
+/**
+ * @brief HID下传数值设置LED状态
  * 
  * @param usb_led 三个LED位的值
  */
 void led_set(uint8_t usb_led)
 {
-    led_change_handler(usb_led, true);
+    led_set_mask(usb_led, 0x001F);
 }
 
 /**
- * @brief 更新LED状态
+ * @brief 更新并暂存LED状态
  * 
- * @param val 若全局更新，则指示全部的LED状态值。若非全局更新，则指示翻转对应位上的LED状态
- * @param all 是否全局更新
+ * @param val 全部的LED状态值
  */
-void led_change_handler(uint8_t val, uint8_t all)
+void led_change_handler(uint16_t val)
 {
-    if (!all) {
-        uint8_t newBit = 0x00;
-        for (uint8_t i = 0; i < 3; i++)
-            newBit |= m_led_state[i] << i;
-
-        val = newBit ^ val;
-    }
-
-    led_notice(val, 0x00); // 处理LED的显示
-    for (uint8_t i = 0; i < 3; i++) // 更新暂存状态
-        m_led_state[i] = val & 1 << i;
+    led_notice(val);
+    led_state = val;
 }
+
 /**
  * @brief 关闭LED
  * 
- * @param p_context 
  */
-void led_turnoff(void* p_context)
+void led_off(void)
 {
-    set_led_num(0x00);
-    counting = false;
+    led_set_state_ll(0x0000);
 }
+
+/**
+ * @brief 开启LED
+ * 
+ */
+void led_on(void)
+{
+    led_set_state_ll(led_state);
+}
+
+void led_timer_init(void);
 
 /**
  * @brief 初始化LED
@@ -117,13 +134,148 @@ void led_init(void)
 #ifdef LED_SCLK
     nrf_gpio_cfg_output(LED_SCLK);
 #endif
-    app_timer_create(&led_off, APP_TIMER_MODE_SINGLE_SHOT, led_turnoff);
+#ifdef LED_COMPOSE
+    nrf_gpio_cfg_output(LED_COMPOSE);
+#endif
+#ifdef LED_KANA
+    nrf_gpio_cfg_output(LED_KANA);
+#endif
+#ifdef LED_BLE
+    nrf_gpio_cfg_output(LED_BLE);
+#endif
+#ifdef LED_USB
+    nrf_gpio_cfg_output(LED_USB);
+#endif
+#ifdef LED_CHARGING
+    nrf_gpio_cfg_output(LED_CHARGING);
+#endif
+#ifdef LED_FULL
+    nrf_gpio_cfg_output(LED_FULL);
+#endif
+#ifdef LED_LOW_POWER
+    nrf_gpio_cfg_output(LED_LOW_POWER);
+#endif
+#ifdef LED_USR1
+    nrf_gpio_cfg_output(LED_USR1);
+#endif
+#ifdef LED_USR2
+    nrf_gpio_cfg_output(LED_USR2);
+#endif
+#ifdef LED_USR3
+    nrf_gpio_cfg_output(LED_USR3);
+#endif
+    led_timer_init();
 }
 
-void led_powersave_mode(bool powersave)
+/**
+ * @brief 底层设置LED状态
+ * 
+ * @param num 
+ */
+void led_set_state_ll(uint16_t num)
 {
-    led_autooff = powersave;
-    if (!powersave) {
-        led_change_handler(0x00, false);
+#ifdef LED_NUM
+    LED_WRITE(LED_NUM, num & (1 << LED_BIT_NUM));
+#endif
+#ifdef LED_CAPS
+    LED_WRITE(LED_CAPS, num & (1 << LED_BIT_CAPS));
+#endif
+#ifdef LED_SCLK
+    LED_WRITE(LED_SCLK, num & (1 << LED_BIT_SCLK));
+#endif
+#ifdef LED_COMPOSE
+    LED_WRITE(LED_COMPOSE, num & (1 << LED_BIT_COMPOSE));
+#endif
+#ifdef LED_KANA
+    LED_WRITE(LED_KANA, num & (1 << LED_BIT_KANA));
+#endif
+#ifdef LED_BLE
+    LED_WRITE(LED_BLE, num & (1 << LED_BIT_BLE));
+#endif
+#ifdef LED_USB
+    LED_WRITE(LED_USB, num & (1 << LED_BIT_USB));
+#endif
+#ifdef LED_CHARGING
+    LED_WRITE(LED_CHARGING, num & (1 << LED_BIT_CHARGING));
+#endif
+#ifdef LED_FULL
+    LED_WRITE(LED_FULL, num & (1 << LED_BIT_FULL));
+#endif
+#ifdef LED_LOW_POWER
+    LED_WRITE(LED_LOW_POWER, num & (1 << LED_BIT_LOW_POWER));
+#endif
+#ifdef LED_USR1
+    LED_WRITE(LED_USR1, num & (1 << LED_BIT_USR1));
+#endif
+#ifdef LED_USR2
+    LED_WRITE(LED_USR2, num & (1 << LED_BIT_USR2));
+#endif
+#ifdef LED_USR3
+    LED_WRITE(LED_USR3, num & (1 << LED_BIT_USR3));
+#endif
+}
+
+#ifdef LED_AUTOOFF_TIME
+
+bool counting;
+bool led_autooff = true;
+APP_TIMER_DEF(led_off_timer);
+
+/**
+ * @brief LED自动关闭的handler
+ * 
+ * @param context 
+ */
+void led_off_timer_handler(void* context)
+{
+    led_off();
+    counting = false;
+}
+
+/**@brief 设置LED状态
+ *
+ * @param[in]   num   led val.
+ */
+void led_notice(uint16_t num)
+{
+    led_set_state_ll(num);
+    if (led_autooff) {
+        if (counting)
+            app_timer_stop(led_off_timer);
+        app_timer_start(led_off_timer, APP_TIMER_TICKS(LED_AUTOOFF_TIME, APP_TIMER_PRESCALER), NULL);
+        counting = true;
     }
 }
+void led_timer_init(void)
+{
+    app_timer_create(&led_off_timer, APP_TIMER_MODE_SINGLE_SHOT, led_off_timer_handler);
+}
+
+/**
+ * @brief 设置省电模式状态
+ * 
+ * @param powersave 
+ */
+void led_powersave_mode(bool powersave)
+{
+    if (counting)
+        app_timer_stop(led_off_timer);
+
+    led_autooff = powersave;
+    led_notice(led_state);
+}
+
+#else
+
+void led_timer_init()
+{
+}
+void led_notice(uint16_t num)
+{
+    led_set_state_ll(num);
+}
+void led_powersave_mode(bool powersave)
+{
+}
+
+#endif

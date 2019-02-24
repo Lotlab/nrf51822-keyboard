@@ -15,6 +15,7 @@
 #include "app_error.h"
 #include "app_scheduler.h"
 #include "app_timer_appsh.h"
+#include "keyboard_led.h"
 #include "nrf_adc.h"
 #include "softdevice_handler_appsh.h"
 
@@ -141,6 +142,8 @@ static void battery_level_update(void)
     uint8_t battery_level;
 
     battery_level = bas_vot2lvl(currVot);
+    // 设置低电量指示灯
+    led_set_bit(LED_BIT_LOW_POWER, battery_level <= 10);
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
     if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_INVALID_STATE) && (err_code != BLE_ERROR_NO_TX_BUFFERS) && (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)) {
