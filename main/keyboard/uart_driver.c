@@ -5,19 +5,19 @@
  * @author Jim Jiang
  * @date 2018-05-18
  */
-#include <string.h>
 #include <config.h>
+#include <string.h>
 
 #ifdef UART_SUPPORT
-#include "uart_driver.h"
 #include "app_error.h"
+#include "app_scheduler.h"
+#include "app_timer_appsh.h"
 #include "app_uart.h"
 #include "app_util_platform.h"
+#include "main.h"
 #include "nrf_drv_uart.h"
 #include "nrf_gpio.h"
-#include "main.h"
-#include "app_timer_appsh.h"
-#include "app_scheduler.h"
+#include "uart_driver.h"
 
 #include "ble_hid_service.h"
 #include "keyboard_conf.h"
@@ -44,8 +44,7 @@ uart_mode uart_current_mode;
  */
 bool ping_state;
 
-typedef enum
-{
+typedef enum {
     STATE_IDLE, // 接收完毕
     STATE_DATA, // 正在接收数据
 } state;
@@ -88,11 +87,10 @@ void uart_ack(bool success)
     uart_send_packet(success ? PACKET_ACK : PACKET_FAIL, NULL, 0);
 }
 
-uint8_t checksum(uint8_t * data, uint8_t len)
+uint8_t checksum(uint8_t* data, uint8_t len)
 {
     uint8_t checksum = 0x00;
-    for (int i = 0; i < len; i++)
-    {
+    for (int i = 0; i < len; i++) {
         checksum += data[i];
     }
     return checksum;
@@ -104,16 +102,12 @@ uint8_t checksum(uint8_t * data, uint8_t len)
  */
 void uart_keymap()
 {
-    if (checksum(recv.data, 61) != recv.data[61])
-    {
+    if (checksum(recv.data, 61) != recv.data[61]) {
         uart_ack(false);
-    }
-    else
-    {
+    } else {
         uint16_t id = recv.data[0];
         memcpy(&keymap_data[id * 60], &recv.data[1], 60);
-        if (id >= 16)
-        {
+        if (id >= 16) {
             keymap_write();
         }
         uart_ack(true);
@@ -126,8 +120,7 @@ void uart_keymap()
  */
 void uart_data_handler()
 {
-    switch ((packet_type)recv.command)
-    {
+    switch ((packet_type)recv.command) {
     case PACKET_USB_STATUS:
         if (uart_current_mode != UART_MODE_BLE_OVERRIDE)
             uart_current_mode = UART_MODE_USB;
@@ -145,14 +138,11 @@ void uart_data_handler()
         led_change_handler(led_val, true);
         break;
     case PACKET_CHARGING:
-        if (recv.data[0] == 0x00)
-        { // full
-        }
-        else
-        { // charging
+        if (recv.data[0] == 0x00) { // full
+        } else { // charging
         }
         break;
-    case PACKET_FAIL:    
+    case PACKET_FAIL:
         uart_send_packet((packet_type)tx_resend_buf[0], &tx_resend_buf[2], tx_resend_buf[1]);
         break;
     default:
@@ -170,8 +160,7 @@ void uart_data_handler()
  */
 bool uart_packet_len_validator(packet_type type, uint8_t len)
 {
-    switch (type)
-    {
+    switch (type) {
     case PACKET_PING:
     case PACKET_USB_STATUS:
     case PACKET_FAIL:
@@ -193,21 +182,18 @@ bool uart_packet_len_validator(packet_type type, uint8_t len)
  */
 void uart_on_recv()
 {
-    switch (current)
-    {
+    switch (current) {
     case STATE_IDLE:
         app_uart_get(&recv.len);
         recv.pos = 0;
         recv.data_len = recv.len - 1;
         current = STATE_DATA;
         break;
-    case STATE_DATA:
-    {
+    case STATE_DATA: {
         while (app_uart_get(&recv.raw[recv.pos]) == NRF_SUCCESS)
             recv.pos++;
 
-        if (recv.pos >= recv.len)
-        {
+        if (recv.pos >= recv.len) {
             current = STATE_IDLE;
 
             if (uart_packet_len_validator((packet_type)recv.command, recv.data_len))
@@ -215,8 +201,7 @@ void uart_on_recv()
             else
                 uart_ack(false);
         }
-    }
-    break;
+    } break;
     }
 }
 
@@ -225,10 +210,9 @@ void uart_on_recv()
  * 
  * @param p_event 
  */
-void uart_evt_handler(app_uart_evt_t *p_event)
+void uart_evt_handler(app_uart_evt_t* p_event)
 {
-    switch (p_event->evt_type)
-    {
+    switch (p_event->evt_type) {
     case APP_UART_DATA_READY:
         uart_on_recv();
         break;
@@ -273,7 +257,8 @@ void uart_init_hardware()
         .flow_control = APP_UART_FLOW_CONTROL_DISABLED,
         .rx_pin_no = UART_RXD,
         .tx_pin_no = UART_TXD,
-        .use_parity = false};
+        .use_parity = false
+    };
 
     err_code = app_uart_init(&config, &buffers, uart_evt_handler, APP_IRQ_PRIORITY_LOW);
     APP_ERROR_CHECK(err_code);
@@ -284,20 +269,17 @@ void uart_init_hardware()
  * 
  * @param p_context 
  */
-void uart_task(void *p_context)
+void uart_task(void* p_context)
 {
     (void)p_context;
-    if (uart_current_mode != UART_MODE_IDLE)
-    {
+    if (uart_current_mode != UART_MODE_IDLE) {
         if (!ping_state) // 没有收到ping包
         {
             uart_to_idle();
             uart_state_change_invoke();
         }
         ping_state = false;
-    }
-    else
-    {
+    } else {
         if (nrf_gpio_pin_read(UART_RXD)) // 状态改变了
         {
             uart_init_hardware();
@@ -317,8 +299,8 @@ void uart_init()
 
     // Create battery timer.
     err_code = app_timer_create(&uart_check_timer,
-                                APP_TIMER_MODE_REPEATED,
-                                uart_task);
+        APP_TIMER_MODE_REPEATED,
+        uart_task);
 
     APP_ERROR_CHECK(err_code);
 
@@ -340,10 +322,9 @@ void uart_init()
  * @param data 
  * @param len 
  */
-void uart_send(uint8_t *data, uint8_t len)
+void uart_send(uint8_t* data, uint8_t len)
 {
-    while (len--)
-    {
+    while (len--) {
         app_uart_put(*(data++));
     }
 }
@@ -355,23 +336,19 @@ void uart_send(uint8_t *data, uint8_t len)
  * @param data 数据
  * @param len 长度
  */
-void uart_send_packet(packet_type type, uint8_t *data, uint8_t len)
+void uart_send_packet(packet_type type, uint8_t* data, uint8_t len)
 {
-    if (uart_current_mode != UART_MODE_IDLE)
-    {
-        if(len == 0)
-        {
+    if (uart_current_mode != UART_MODE_IDLE) {
+        if (len == 0) {
             app_uart_put(1);
             app_uart_put(type);
-        }
-        else
-        {
+        } else {
             app_uart_put(len + 2);
             app_uart_put(type);
             uart_send(data, len);
             app_uart_put(checksum(data, len));
         }
-        
+
         tx_resend_buf[0] = type;
         tx_resend_buf[1] = len;
         memcpy(&tx_resend_buf[2], data, len);
@@ -405,16 +382,15 @@ bool uart_is_using_usb()
  */
 void uart_switch_mode()
 {
-    switch(uart_current_mode)
-    {
-        case UART_MODE_USB:
-            uart_current_mode = UART_MODE_BLE_OVERRIDE;
-            break;
-        case UART_MODE_BLE_OVERRIDE:
-            uart_current_mode = UART_MODE_USB;
-            break;
-        default:
-            break;
+    switch (uart_current_mode) {
+    case UART_MODE_USB:
+        uart_current_mode = UART_MODE_BLE_OVERRIDE;
+        break;
+    case UART_MODE_BLE_OVERRIDE:
+        uart_current_mode = UART_MODE_USB;
+        break;
+    default:
+        break;
     }
 }
 

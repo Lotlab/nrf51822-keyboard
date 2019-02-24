@@ -5,10 +5,10 @@
  * @author Jim Jiang
  * @date 2018-05-13
  */
-#include "nrf.h"
 #include "main.h"
-#include "timer.h"
 #include "nordic_common.h"
+#include "nrf.h"
+#include "timer.h"
 
 #include "app_timer.h"
 
@@ -22,36 +22,31 @@ void timer_clear()
     // can't do anything
 }
 
-inline
-uint16_t timer_read()
+inline uint16_t timer_read()
 {
     return (uint16_t)(timer_read32() % 0xFFFF);
 }
 
-inline
-uint32_t timer_read32()
+inline uint32_t timer_read32()
 {
     uint32_t time;
     // 24bit, 32768 tick per sec.
     // so only 19 bits are valid.
-    
+
     // but, tmk does not use 32bit timer
     app_timer_cnt_get(&time);
     return time / 32;
 }
 
-inline
-uint16_t timer_elapsed(uint16_t last)
+inline uint16_t timer_elapsed(uint16_t last)
 {
     return TIMER_DIFF_16(timer_read(), last);
 }
 
-inline
-uint32_t timer_elapsed32(uint32_t last)
+inline uint32_t timer_elapsed32(uint32_t last)
 {
-    uint32_t time,elapsed;
+    uint32_t time, elapsed;
     app_timer_cnt_get(&time);
-    app_timer_cnt_diff_compute(time, last*32, &elapsed);
+    app_timer_cnt_diff_compute(time, last * 32, &elapsed);
     return elapsed / 32;
 }
-

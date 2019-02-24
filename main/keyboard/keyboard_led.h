@@ -1,8 +1,8 @@
 #ifndef __LED_H__
 #define __LED_H__
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 void led_notice(uint8_t num, uint8_t type);

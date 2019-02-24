@@ -27,40 +27,40 @@
  */
 
 #include "main.h"
-#include "ble_advertising.h"
-#include "softdevice_handler_appsh.h"
 #include "app_scheduler.h"
 #include "app_timer_appsh.h"
-#include "pstorage.h"
+#include "ble_advertising.h"
 #include "nrf_drv_wdt.h"
+#include "pstorage.h"
+#include "softdevice_handler_appsh.h"
 
-#include "ble_services.h"
 #include "battery_service.h"
 #include "ble_hid_service.h"
+#include "ble_services.h"
 
 #include "keyboard.h"
+#include "keyboard_host_driver.h"
 #include "keyboard_led.h"
 #include "keyboard_matrix.h"
-#include "keyboard_host_driver.h"
 #include "keymap_storage.h"
 
-#include "report.h"
-#include "hook.h"
-#include "custom_hook.h"
 #include "bootmagic.h"
+#include "custom_hook.h"
 #include "eeconfig.h"
+#include "hook.h"
+#include "report.h"
 #include "uart_driver.h"
 
-#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(KEYBOARD_FAST_SCAN_INTERVAL, APP_TIMER_PRESCALER)                  /**< Keyboard scan interval (ticks). */
-#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(KEYBOARD_SLOW_SCAN_INTERVAL, APP_TIMER_PRESCALER)            /**< Keyboard slow scan interval (ticks). */
-#define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)                /**< 键盘Tick计时器 */
+#define KEYBOARD_SCAN_INTERVAL APP_TIMER_TICKS(KEYBOARD_FAST_SCAN_INTERVAL, APP_TIMER_PRESCALER) /**< Keyboard scan interval (ticks). */
+#define KEYBOARD_SCAN_INTERVAL_SLOW APP_TIMER_TICKS(KEYBOARD_SLOW_SCAN_INTERVAL, APP_TIMER_PRESCALER) /**< Keyboard slow scan interval (ticks). */
+#define KEYBOARD_FREE_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER) /**< 键盘Tick计时器 */
 #define KEYBOARD_WDT_INTERVAL APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
 #define SCHED_MAX_EVENT_DATA_SIZE MAX(APP_TIMER_SCHED_EVT_SIZE, \
-                                      BLE_STACK_HANDLER_SCHED_EVT_SIZE) /**< Maximum size of scheduler events. */
-#define SCHED_QUEUE_SIZE 0x10                                             /**< Maximum number of events in the scheduler queue. */
+    BLE_STACK_HANDLER_SCHED_EVT_SIZE) /**< Maximum size of scheduler events. */
+#define SCHED_QUEUE_SIZE 0x10 /**< Maximum number of events in the scheduler queue. */
 
 APP_TIMER_DEF(m_keyboard_scan_timer_id);
 APP_TIMER_DEF(m_keyboard_sleep_timer_id);
@@ -83,7 +83,7 @@ static nrf_drv_wdt_channel_id m_channel_id;
  * @param[in]   line_num   Line number of the failing ASSERT call.
  * @param[in]   file_name  File name of the failing ASSERT call.
  */
-void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name)
+void assert_nrf_callback(uint16_t line_num, const uint8_t* p_file_name)
 {
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
     printf("Line %d: %s", line_num, p_file_name);
@@ -101,9 +101,9 @@ void service_error_handler(uint32_t nrf_error)
     APP_ERROR_HANDLER(nrf_error);
 }
 
-static void keyboard_scan_timeout_handler(void *p_context);
-static void keyboard_sleep_timeout_handler(void *p_context);
-static void keyboard_wdt_timeout_handler(void *p_context);
+static void keyboard_scan_timeout_handler(void* p_context);
+static void keyboard_sleep_timeout_handler(void* p_context);
+static void keyboard_wdt_timeout_handler(void* p_context);
 
 /**@brief 计时器初始化函数
  *
@@ -117,20 +117,20 @@ static void timers_init(void)
     APP_TIMER_APPSH_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, true);
 
     err_code = app_timer_create(&m_keyboard_scan_timer_id,
-                                APP_TIMER_MODE_REPEATED,
-                                keyboard_scan_timeout_handler);
+        APP_TIMER_MODE_REPEATED,
+        keyboard_scan_timeout_handler);
 
     APP_ERROR_CHECK(err_code);
 
     err_code = app_timer_create(&m_keyboard_sleep_timer_id,
-                                APP_TIMER_MODE_REPEATED,
-                                keyboard_sleep_timeout_handler);
+        APP_TIMER_MODE_REPEATED,
+        keyboard_sleep_timeout_handler);
 
     APP_ERROR_CHECK(err_code);
-    
+
     err_code = app_timer_create(&m_keyboard_wdt_timer_id,
-                                APP_TIMER_MODE_REPEATED,
-                                keyboard_wdt_timeout_handler);
+        APP_TIMER_MODE_REPEATED,
+        keyboard_wdt_timeout_handler);
 
     APP_ERROR_CHECK(err_code);
 }
@@ -149,27 +149,20 @@ static void services_init(void)
  * @param key_packet 按键报文
  * @param key_packet_size 报文长度
  */
-void keyboard_conn_pass_enter_handler(uint8_t *key_packet, uint8_t key_packet_size)
+void keyboard_conn_pass_enter_handler(uint8_t* key_packet, uint8_t key_packet_size)
 {
-    if (passkey_enter_index < 6 && auth_key_reqired())
-    {
-        for (uint_fast8_t i = 0; i < key_packet_size; i++)
-        {
-            if (key_packet[i] >= KC_1)
-            {
-                if (key_packet[i] <= KC_0)
-                {
+    if (passkey_enter_index < 6 && auth_key_reqired()) {
+        for (uint_fast8_t i = 0; i < key_packet_size; i++) {
+            if (key_packet[i] >= KC_1) {
+                if (key_packet[i] <= KC_0) {
                     passkey_entered[passkey_enter_index++] = (key_packet[i] + 1 - KC_1) % 10 + '0';
-                }
-                else if (key_packet[i] >= KC_KP_1 && key_packet[i] <= KC_KP_0)
-                {
+                } else if (key_packet[i] >= KC_KP_1 && key_packet[i] <= KC_KP_0) {
                     passkey_entered[passkey_enter_index++] = (key_packet[i] + 1 - KC_KP_1) % 10 + '0';
-                }
-                else if (key_packet[i] == KC_BSPACE) passkey_enter_index--;
+                } else if (key_packet[i] == KC_BSPACE)
+                    passkey_enter_index--;
             }
         }
-        if (passkey_enter_index == 6)
-        {
+        if (passkey_enter_index == 6) {
             auth_key_reply(passkey_entered);
             passkey_enter_index = 0;
         }
@@ -198,15 +191,12 @@ static void keyboard_switch_scan_mode(bool slow)
  * 
  * @param p_context 
  */
-static void keyboard_sleep_timeout_handler(void *p_context)
+static void keyboard_sleep_timeout_handler(void* p_context)
 {
     sleep_timer_counter++;
-    if (sleep_timer_counter == SLEEP_SLOW_TIMEOUT)
-    {
+    if (sleep_timer_counter == SLEEP_SLOW_TIMEOUT) {
         keyboard_switch_scan_mode(true);
-    }
-    else if (sleep_timer_counter == SLEEP_OFF_TIMEOUT)
-    {
+    } else if (sleep_timer_counter == SLEEP_OFF_TIMEOUT) {
         sleep_mode_enter(true);
     }
 }
@@ -216,8 +206,7 @@ static void keyboard_sleep_timeout_handler(void *p_context)
  */
 static void keyboard_sleep_counter_reset(void)
 {
-    if (sleep_timer_counter >= SLEEP_SLOW_TIMEOUT)
-    {
+    if (sleep_timer_counter >= SLEEP_SLOW_TIMEOUT) {
         keyboard_switch_scan_mode(false);
     }
     sleep_timer_counter = 0;
@@ -228,11 +217,11 @@ static void keyboard_sleep_counter_reset(void)
  * @details This function will be called each time the keyboard scan timer expires.
  *
  */
-static void keyboard_scan_timeout_handler(void *p_context)
+static void keyboard_scan_timeout_handler(void* p_context)
 {
     UNUSED_PARAMETER(p_context);
     // well, as fast as possible, it's impossible.
-	keyboard_task();
+    keyboard_task();
 }
 /**
  * @brief 键盘扫描结果改变的Hook
@@ -257,7 +246,7 @@ void hook_key_change()
  * 
  * @param report 按键报文
  */
-void hook_send_keyboard(report_keyboard_t * report)
+void hook_send_keyboard(report_keyboard_t* report)
 {
     keyboard_conn_pass_enter_handler(report->keys, sizeof(report->keys));
 }
@@ -269,20 +258,18 @@ void hook_send_keyboard(report_keyboard_t * report)
 void hook_bootmagic()
 {
     bool erase_bond = false;
-    if(!bootmagic_scan_key(BOOTMAGIC_KEY_BOOT))
-    {
-        // Yes, 如果没有按下Space+U，那就不开机。
-        #ifdef UART_SUPPORT
-        if(uart_current_mode == UART_MODE_IDLE) // 插入了USB，则直接开机
-        #endif
+    if (!bootmagic_scan_key(BOOTMAGIC_KEY_BOOT)) {
+// Yes, 如果没有按下Space+U，那就不开机。
+#ifdef UART_SUPPORT
+        if (uart_current_mode == UART_MODE_IDLE) // 插入了USB，则直接开机
+#endif
         {
-        #ifndef KEYBOARD_DEBUG
+#ifndef KEYBOARD_DEBUG
             sleep_mode_enter(false);
-        #endif
+#endif
         }
     }
-    if(bootmagic_scan_key(BOOTMAGIC_KEY_ERASE_BOND))
-    {
+    if (bootmagic_scan_key(BOOTMAGIC_KEY_ERASE_BOND)) {
         // 按下Space+E，删除所有的绑定信息
         erase_bond = true;
     }
@@ -300,7 +287,7 @@ static void timers_start(void)
 
     err_code = app_timer_start(m_keyboard_sleep_timer_id, KEYBOARD_FREE_INTERVAL, NULL);
     APP_ERROR_CHECK(err_code);
-    
+
     err_code = app_timer_start(m_keyboard_wdt_timer_id, KEYBOARD_WDT_INTERVAL, NULL);
     APP_ERROR_CHECK(err_code);
 
@@ -317,8 +304,10 @@ void sleep_mode_enter(bool notice)
 {
     uint32_t err_code;
 
-    if(notice)led_notice(0x00, true);
-    else led_notice(0x00, false);
+    if (notice)
+        led_notice(0x00, true);
+    else
+        led_notice(0x00, false);
     matrix_sleep_prepare();
 #ifdef UART_SUPPORT
     uart_sleep_prepare();
@@ -336,7 +325,7 @@ void sleep_mode_enter(bool notice)
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
  */
-static void ble_evt_dispatch(ble_evt_t *p_ble_evt)
+static void ble_evt_dispatch(ble_evt_t* p_ble_evt)
 {
     dm_ble_evt_handler(p_ble_evt);
 
@@ -397,7 +386,6 @@ static void scheduler_init(void)
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
 }
 
-
 /**@brief Function for initializing buttons and leds.
  *
  * @param[out] p_erase_bonds  Will be true if the clear bonding button was pressed to wake the application up.
@@ -408,7 +396,7 @@ static void buttons_leds_init(void)
     led_init();
 }
 
-static void wdt_evt(void){}
+static void wdt_evt(void) {}
 
 static void wdt_init(void)
 {
@@ -421,7 +409,7 @@ static void wdt_init(void)
     nrf_drv_wdt_enable();
 }
 
-static void keyboard_wdt_timeout_handler(void *p_context)
+static void keyboard_wdt_timeout_handler(void* p_context)
 {
     UNUSED_PARAMETER(p_context);
     nrf_drv_wdt_channel_feed(m_channel_id);
@@ -440,15 +428,12 @@ static void power_manage(void)
 void uart_state_change(bool state)
 {
     uint32_t err_code;
-    if(state)
-    {
+    if (state) {
         err_code = app_timer_stop(m_keyboard_sleep_timer_id);
         APP_ERROR_CHECK(err_code);
         led_powersave_mode(false);
         keyboard_switch_scan_mode(false);
-    }
-    else
-    {
+    } else {
         err_code = app_timer_start(m_keyboard_sleep_timer_id, KEYBOARD_FREE_INTERVAL, NULL);
         APP_ERROR_CHECK(err_code);
         led_powersave_mode(true);
@@ -461,26 +446,26 @@ void uart_state_change(bool state)
 int main(void)
 {
     uint32_t err_code;
-    
+
     // Initialize.
     // app_trace_init();
     timers_init();
     buttons_leds_init();
     ble_stack_init();
     scheduler_init();
-    
+
     sd_power_dcdc_mode_set(true);
-    
+
     // Initialize persistent storage module before the keyboard.
     err_code = pstorage_init();
     APP_ERROR_CHECK(err_code);
-    
+
     keymap_init();
 #ifdef UART_SUPPORT
     uart_set_evt_handler(&uart_state_change);
     uart_init();
 #endif
-	keyboard_init();
+    keyboard_init();
     services_init();
 
     // set driver after all module inited.
@@ -490,17 +475,16 @@ int main(void)
     wdt_init();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
-    
+
     led_change_handler(0x01, true);
     led_notice(0x07, 0x00);
-    
+
 #ifdef UART_SUPPORT
     uart_state_change(uart_current_mode != UART_MODE_IDLE);
 #endif
-    
+
     // Enter main loop.
-    for (;;)
-    {
+    for (;;) {
         app_sched_execute();
         power_manage();
     }

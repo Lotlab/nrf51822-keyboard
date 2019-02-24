@@ -5,15 +5,15 @@
  * @author Jim Jiang
  * @date 2018-05-13
  */
-#include "main.h"
 #include "keyboard_led.h"
-#include "keyboard_conf.h"
-#include "nrf_gpio.h"
-#include "nrf_delay.h"
 #include "app_timer_appsh.h"
+#include "keyboard_conf.h"
 #include "led.h"
+#include "main.h"
+#include "nrf_delay.h"
+#include "nrf_gpio.h"
 
-bool m_led_state[3] = {false};                    /**< LED State. */
+bool m_led_state[3] = { false }; /**< LED State. */
 bool counting;
 bool led_autooff = true;
 APP_TIMER_DEF(led_off);
@@ -43,23 +43,22 @@ void set_led_num(uint8_t num)
  */
 void led_notice(uint8_t num, uint8_t type)
 {
-    switch(type) 
-    {
-        case 0:
-            set_led_num(num);
-            if(led_autooff)
-            {
-                if(counting) app_timer_stop(led_off);
-                app_timer_start(led_off, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
-                counting = true;
-            }
+    switch (type) {
+    case 0:
+        set_led_num(num);
+        if (led_autooff) {
+            if (counting)
+                app_timer_stop(led_off);
+            app_timer_start(led_off, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
+            counting = true;
+        }
         break;
-        case 1:
-            set_led_num(0x07);
-            nrf_delay_ms(100);
-            set_led_num(num);
-            nrf_delay_ms(100);
-        break; 
+    case 1:
+        set_led_num(0x07);
+        nrf_delay_ms(100);
+        set_led_num(num);
+        nrf_delay_ms(100);
+        break;
     }
 }
 /**
@@ -69,7 +68,7 @@ void led_notice(uint8_t num, uint8_t type)
  */
 void led_set(uint8_t usb_led)
 {
-	led_change_handler(usb_led, true);
+    led_change_handler(usb_led, true);
 }
 
 /**
@@ -80,17 +79,16 @@ void led_set(uint8_t usb_led)
  */
 void led_change_handler(uint8_t val, uint8_t all)
 {
-    if(!all)
-    {
+    if (!all) {
         uint8_t newBit = 0x00;
-        for(uint8_t i=0; i<3; i++)
+        for (uint8_t i = 0; i < 3; i++)
             newBit |= m_led_state[i] << i;
-        
-        val = newBit ^ val; 
+
+        val = newBit ^ val;
     }
-    
+
     led_notice(val, 0x00); // 处理LED的显示
-    for(uint8_t i=0; i<3; i++) // 更新暂存状态
+    for (uint8_t i = 0; i < 3; i++) // 更新暂存状态
         m_led_state[i] = val & 1 << i;
 }
 /**
@@ -98,7 +96,7 @@ void led_change_handler(uint8_t val, uint8_t all)
  * 
  * @param p_context 
  */
-void led_turnoff(void * p_context)
+void led_turnoff(void* p_context)
 {
     set_led_num(0x00);
     counting = false;
@@ -125,9 +123,7 @@ void led_init(void)
 void led_powersave_mode(bool powersave)
 {
     led_autooff = powersave;
-    if(!powersave)
-    {
-        led_change_handler(0x00,false);
+    if (!powersave) {
+        led_change_handler(0x00, false);
     }
 }
-

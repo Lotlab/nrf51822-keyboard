@@ -5,22 +5,22 @@
  * @author Jim Jiang
  * @date 2018-05-13
  */
-#include <stdint.h>
+#include "app_error.h"
 #include "eeconfig.h"
 #include "pstorage.h"
-#include "app_error.h"
+#include <stdint.h>
 
 bool realIsInit = false;
 
-pstorage_handle_t       pstorage_base_block_id;
-pstorage_handle_t       block_handle;
+pstorage_handle_t pstorage_base_block_id;
+pstorage_handle_t block_handle;
 
 void config_pstorage_init(void);
 void config_write(void);
 void config_read(void);
 void config_update(void);
 
-static uint8_t config_buffer[8] __attribute__ ((aligned (4))) = {EECONFIG_MAGIC_NUMBER>>8, EECONFIG_MAGIC_NUMBER % 0x100 , 0,0,0,0,0,0}; 
+static uint8_t config_buffer[8] __attribute__((aligned(4))) = { EECONFIG_MAGIC_NUMBER >> 8, EECONFIG_MAGIC_NUMBER % 0x100, 0, 0, 0, 0, 0, 0 };
 
 static void eeconfig_set_default()
 {
@@ -42,13 +42,10 @@ bool eeconfig_is_enabled(void)
 
 void eeconfig_init(void)
 {
-    if(realIsInit)
-    {
+    if (realIsInit) {
         eeconfig_set_default();
         config_update();
-    }
-    else
-    {
+    } else {
         config_pstorage_init();
         realIsInit = true;
     }
@@ -59,7 +56,7 @@ void eeconfig_enable(void)
 }
 
 void eeconfig_disable(void)
-{ 
+{
 }
 
 uint8_t eeconfig_read_debug(void)
@@ -69,7 +66,7 @@ uint8_t eeconfig_read_debug(void)
 
 void eeconfig_write_debug(uint8_t val)
 {
-    config_buffer[2] = val;    
+    config_buffer[2] = val;
     config_update();
 }
 
@@ -80,7 +77,7 @@ uint8_t eeconfig_read_default_layer(void)
 
 void eeconfig_write_default_layer(uint8_t val)
 {
-    config_buffer[3] = val;    
+    config_buffer[3] = val;
     config_update();
 }
 
@@ -106,66 +103,54 @@ void eeconfig_write_backlight(uint8_t val)
 }
 #endif
 
-
-static void config_pstorage_callback_handler(pstorage_handle_t *p_handle, uint8_t op_code, uint32_t result, uint8_t *p_data, uint32_t data_len)
+static void config_pstorage_callback_handler(pstorage_handle_t* p_handle, uint8_t op_code, uint32_t result, uint8_t* p_data, uint32_t data_len)
 {
-    switch(op_code)
-    {
-        case PSTORAGE_LOAD_OP_CODE:
-           if (result == NRF_SUCCESS)
-           {
-               // Store operation successful.
-           }
-           else
-           {
-               // Store operation failed.
-           }
-           // Source memory can now be reused or freed.
-           break;       
-        case PSTORAGE_UPDATE_OP_CODE:
-           if (result == NRF_SUCCESS)
-           {
-               // Update operation successful.
-           }
-           else
-           {
-               // Update operation failed.
-           }
-           break;
-       case PSTORAGE_CLEAR_OP_CODE:
-           if (result == NRF_SUCCESS)
-           {
-               // Clear operation successful.
-           }
-           else
-           {
-               // Clear operation failed.
-           }
-           break;
+    switch (op_code) {
+    case PSTORAGE_LOAD_OP_CODE:
+        if (result == NRF_SUCCESS) {
+            // Store operation successful.
+        } else {
+            // Store operation failed.
+        }
+        // Source memory can now be reused or freed.
+        break;
+    case PSTORAGE_UPDATE_OP_CODE:
+        if (result == NRF_SUCCESS) {
+            // Update operation successful.
+        } else {
+            // Update operation failed.
+        }
+        break;
+    case PSTORAGE_CLEAR_OP_CODE:
+        if (result == NRF_SUCCESS) {
+            // Clear operation successful.
+        } else {
+            // Clear operation failed.
+        }
+        break;
     }
 }
 
 static void config_pstorage_init(void)
 {
-    //pstorage init in device manager, so do not init here 
-    
+    //pstorage init in device manager, so do not init here
+
     //registe some parames
     pstorage_module_param_t param;
-    uint32_t                err_code;
-          
-    param.block_size  = 0x10; // 4 byte is enough, but pstorage minimum block size is 0x10
+    uint32_t err_code;
+
+    param.block_size = 0x10; // 4 byte is enough, but pstorage minimum block size is 0x10
     param.block_count = 1;
-    param.cb          = config_pstorage_callback_handler;
-        
+    param.cb = config_pstorage_callback_handler;
+
     err_code = pstorage_register(&param, &pstorage_base_block_id);
     APP_ERROR_CHECK(err_code);
-    
+
     err_code = pstorage_block_identifier_get(&pstorage_base_block_id, 0, &block_handle);
     APP_ERROR_CHECK(err_code);
-    
+
     config_read();
-    if(config_buffer[0] != EECONFIG_MAGIC_NUMBER>>8 || config_buffer[1] != EECONFIG_MAGIC_NUMBER % 0x100)
-    {
+    if (config_buffer[0] != EECONFIG_MAGIC_NUMBER >> 8 || config_buffer[1] != EECONFIG_MAGIC_NUMBER % 0x100) {
         eeconfig_set_default();
         config_write();
     }
@@ -191,13 +176,13 @@ static void config_pstorage_update(uint8_t addr, uint8_t* data, uint8_t len)
 
 static void config_update()
 {
-    config_pstorage_update(0,config_buffer,sizeof(config_buffer));
+    config_pstorage_update(0, config_buffer, sizeof(config_buffer));
 }
 static void config_read()
 {
-    config_pstorage_read(0,config_buffer,sizeof(config_buffer));
+    config_pstorage_read(0, config_buffer, sizeof(config_buffer));
 }
 static void config_write()
 {
-    config_pstorage_write(0,config_buffer,sizeof(config_buffer));
+    config_pstorage_write(0, config_buffer, sizeof(config_buffer));
 }

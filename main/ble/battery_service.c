@@ -5,17 +5,17 @@
  * @author Jim Jiang
  * @date 2018-05-13
  */
-#include <string.h>
-#include "main.h"
-#include "keyboard_conf.h"
 #include "battery_service.h"
+#include "keyboard_conf.h"
+#include "main.h"
+#include <string.h>
 
 #ifdef KEYBOARD_ADC
 
-#include "nrf_adc.h"
 #include "app_error.h"
-#include "app_timer_appsh.h"
 #include "app_scheduler.h"
+#include "app_timer_appsh.h"
+#include "nrf_adc.h"
 #include "softdevice_handler_appsh.h"
 
 APP_TIMER_DEF(m_battery_timer_id);
@@ -59,12 +59,12 @@ static void bas_init(void)
  */
 static void battery_sensor_init(void)
 {
-    nrf_adc_config_t nrf_adc_config = {NRF_ADC_CONFIG_RES_10BIT,                // 10Bit 精度
-                                       NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE, // 完整输入
-                                       NRF_ADC_CONFIG_REF_VBG};                 // 内置 1.2V 基准
+    nrf_adc_config_t nrf_adc_config = { NRF_ADC_CONFIG_RES_10BIT, // 10Bit 精度
+        NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE, // 完整输入
+        NRF_ADC_CONFIG_REF_VBG }; // 内置 1.2V 基准
 
     // Initialize and configure ADC
-    nrf_adc_configure((nrf_adc_config_t *)&nrf_adc_config);
+    nrf_adc_configure((nrf_adc_config_t*)&nrf_adc_config);
     nrf_adc_input_select(KEYBOARD_ADC);
     nrf_adc_int_enable(ADC_INTENSET_END_Enabled << ADC_INTENSET_END_Pos);
     NVIC_SetPriority(ADC_IRQn, NRF_APP_PRIORITY_LOW);
@@ -78,7 +78,7 @@ static void battery_sensor_init(void)
  * @param[in]   p_context   Pointer used for passing some arbitrary information (context) from the
  *                          app_start_timer() call to the timeout handler.
  */
-static void battery_level_meas_timeout_handler(void *p_context)
+static void battery_level_meas_timeout_handler(void* p_context)
 {
     UNUSED_PARAMETER(p_context);
     nrf_adc_start();
@@ -94,8 +94,8 @@ static void battery_timer_init(void)
 
     // Create battery timer.
     err_code = app_timer_create(&m_battery_timer_id,
-                                APP_TIMER_MODE_REPEATED,
-                                battery_level_meas_timeout_handler);
+        APP_TIMER_MODE_REPEATED,
+        battery_level_meas_timeout_handler);
 
     APP_ERROR_CHECK(err_code);
 }
@@ -143,11 +143,7 @@ static void battery_level_update(void)
     battery_level = bas_vot2lvl(currVot);
 
     err_code = ble_bas_battery_level_update(&m_bas, battery_level);
-    if ((err_code != NRF_SUCCESS) &&
-        (err_code != NRF_ERROR_INVALID_STATE) &&
-        (err_code != BLE_ERROR_NO_TX_BUFFERS) &&
-        (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING))
-    {
+    if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_INVALID_STATE) && (err_code != BLE_ERROR_NO_TX_BUFFERS) && (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)) {
         APP_ERROR_HANDLER(err_code);
     }
 }
@@ -174,7 +170,7 @@ static uint16_t adc2vottage(int32_t adcResult)
 {
     // Vmes = Vreal * 2.2M / (10M + 2.2M)
     // result = Vmes / Vref * BATTERY_ADC_DIV
-    // 
+    //
     // Vreal = Vmes * 12.2 / 2.2
     //       = result / BATTERY_ADC_DIV * Vref * 12.2 / 2.2
     //       = result * Vref / 2^10 * 122 / 22
@@ -193,12 +189,13 @@ static uint16_t adc_result_calc()
     // 中值滤波
     uint16_t min = 0xFFFF, max = 0x0000, curr;
     uint32_t total = 0;
-    for (int i = 0; i < ADC_RESULT_QUEUE_SIZE; i++)
-    {
+    for (int i = 0; i < ADC_RESULT_QUEUE_SIZE; i++) {
         curr = adc_result_queue[i];
         total += curr;
-        if (curr > max)  max = curr;
-        if (curr < min)  min = curr;
+        if (curr > max)
+            max = curr;
+        if (curr < min)
+            min = curr;
     }
     total -= max;
     total -= min;
@@ -210,7 +207,8 @@ static uint16_t adc_result_calc()
  * @brief 电量测量切换至慢速测量模式
  * 
  */
-static void ADC_switch_to_slow_mode() {
+static void ADC_switch_to_slow_mode()
+{
     uint32_t err_code = app_timer_stop(m_battery_timer_id);
     err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL_SLOW, NULL);
     APP_ERROR_CHECK(err_code);
@@ -224,28 +222,23 @@ static void ADC_switch_to_slow_mode() {
  * @param p_event_data 
  * @param event_size 
  */
-static void ADC_appsh_mes_evt_handler(void *p_event_data, uint16_t event_size)
+static void ADC_appsh_mes_evt_handler(void* p_event_data, uint16_t event_size)
 {
     UNUSED_PARAMETER(p_event_data);
     UNUSED_PARAMETER(event_size);
 
-    if (adc_result_queue_index >= ADC_RESULT_QUEUE_SIZE)
-    {
+    if (adc_result_queue_index >= ADC_RESULT_QUEUE_SIZE) {
         adc_result_queue_index = 0;
     }
     adc_result_queue[adc_result_queue_index++] = nrf_adc_result_get();
 
-    if (slowMode)
-    {
+    if (slowMode) {
         // 数据已经稳定，可以直接计算上传
         currVot = adc2vottage(adc_result_calc());
         battery_level_update();
-    }
-    else
-    {
+    } else {
         // 数据尚未稳定，需要稳定后才延长测量间隔并上传
-        if (currVot == adc2vottage(adc_result_calc()) && currVot > 0) 
-        {
+        if (currVot == adc2vottage(adc_result_calc()) && currVot > 0) {
             ADC_switch_to_slow_mode();
             battery_level_update();
         }
@@ -268,13 +261,13 @@ void ADC_IRQHandler()
  * 
  * @param p_ble_evt 
  */
-void battery_service_ble_evt(ble_evt_t *p_ble_evt)
+void battery_service_ble_evt(ble_evt_t* p_ble_evt)
 {
     ble_bas_on_ble_evt(&m_bas, p_ble_evt);
 }
 
 #else
-void battery_service_ble_evt(ble_evt_t *p_ble_evt){}
-void battery_timer_start(void){}
-void battery_service_init(void){}
+void battery_service_ble_evt(ble_evt_t* p_ble_evt) {}
+void battery_timer_start(void) {}
+void battery_service_init(void) {}
 #endif

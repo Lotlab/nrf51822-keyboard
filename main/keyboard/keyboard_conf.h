@@ -1,9 +1,9 @@
 #ifndef _keyboard_conf_h_
 #define _keyboard_conf_h_
 
-#include <stdint.h>
-#include "nrf_adc.h"
 #include "config.h"
+#include "nrf_adc.h"
+#include <stdint.h>
 
 #ifdef KEYBOARD_4100
 
@@ -18,16 +18,16 @@
 #define LED_SCLK 13
 
 /** 行IO */
-static const uint8_t row_pin_array[MATRIX_ROWS] = {21,22,23,24,25,26,27,29};
+static const uint8_t row_pin_array[MATRIX_ROWS] = { 21, 22, 23, 24, 25, 26, 27, 29 };
 /** 列IO */
-static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0,30,28};
+static const uint8_t column_pin_array[MATRIX_COLS] = { 3, 4, 5, 6, 7, 15, 14, 10, 9, 8, 2, 0, 30, 28 };
 
 /** Bootloader强制进入引脚 */
 #define BOOTLOADER_BUTTON 16
 
-#define UPDATE_IN_PROGRESS_LED      LED_NUM
-#define ADVERTISING_LED_PIN_NO      LED_CAPS
-#define CONNECTED_LED_PIN_NO        LED_SCLK
+#define UPDATE_IN_PROGRESS_LED LED_NUM
+#define ADVERTISING_LED_PIN_NO LED_CAPS
+#define CONNECTED_LED_PIN_NO LED_SCLK
 #define LED_POSITIVE
 
 #endif
@@ -44,12 +44,12 @@ static const uint8_t column_pin_array[MATRIX_COLS] = {3,4,5,6,7,15,14,10,9,8,2,0
 #define UART_TXD 22
 #define UART_RXD 21
 
-static const uint8_t row_pin_array[MATRIX_ROWS] = {24,25,26,27,28};
+static const uint8_t row_pin_array[MATRIX_ROWS] = { 24, 25, 26, 27, 28 };
 
 #define BOOTLOADER_BUTTON 20
-#define UPDATE_IN_PROGRESS_LED      LED_CAPS
-#define ADVERTISING_LED_PIN_NO      LED_EXT1
-#define CONNECTED_LED_PIN_NO        LED_EXT2
+#define UPDATE_IN_PROGRESS_LED LED_CAPS
+#define ADVERTISING_LED_PIN_NO LED_EXT1
+#define CONNECTED_LED_PIN_NO LED_EXT2
 #define LED_POSITIVE
 
 /**
@@ -57,23 +57,22 @@ static const uint8_t row_pin_array[MATRIX_ROWS] = {24,25,26,27,28};
  * 
  */
 #ifdef KEYBOARD_REVA
-    static const uint8_t column_pin_array[MATRIX_COLS] = {19,17,15,13,11,9,7,6,5,4,3,2,1,0};
+static const uint8_t column_pin_array[MATRIX_COLS] = { 19, 17, 15, 13, 11, 9, 7, 6, 5, 4, 3, 2, 1, 0 };
 #else
-    #define KEYBOARD_ADC NRF_ADC_CONFIG_INPUT_2
-    static const uint8_t column_pin_array[MATRIX_COLS] = {19,17,15,13,11,9,7,6,5,4,3,2,0,30};
+#define KEYBOARD_ADC NRF_ADC_CONFIG_INPUT_2
+static const uint8_t column_pin_array[MATRIX_COLS] = { 19, 17, 15, 13, 11, 9, 7, 6, 5, 4, 3, 2, 0, 30 };
 #endif
 
 #endif
 
 #ifdef LED_POSITIVE
-    #define LED_SET(x) nrf_gpio_pin_set(x)
-    #define LED_CLEAR(x) nrf_gpio_pin_clear(x)
-    #define LED_WRITE(x,b) nrf_gpio_pin_write(x,b)
+#define LED_SET(x) nrf_gpio_pin_set(x)
+#define LED_CLEAR(x) nrf_gpio_pin_clear(x)
+#define LED_WRITE(x, b) nrf_gpio_pin_write(x, b)
 #else
-    #define LED_SET(x) nrf_gpio_pin_clear(x)
-    #define LED_CLEAR(x) nrf_gpio_pin_set(x)
-    #define LED_WRITE(x,b) nrf_gpio_pin_write(x,!(b))
+#define LED_SET(x) nrf_gpio_pin_clear(x)
+#define LED_CLEAR(x) nrf_gpio_pin_set(x)
+#define LED_WRITE(x, b) nrf_gpio_pin_write(x, !(b))
 #endif
-
 
 #endif
