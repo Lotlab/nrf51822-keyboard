@@ -34,7 +34,8 @@ void led_flash_all(void)
     nrf_delay_ms(100);
 }
 
-void led_flash_all_off(void * p) {
+void led_flash_all_off(void* p)
+{
     led_off();
 }
 
@@ -42,7 +43,8 @@ void led_flash_all_off(void * p) {
  * @brief 使用Timer闪烁所有LED
  * 
  */
-void led_flash_all_timer(void) {
+void led_flash_all_timer(void)
+{
     led_set_state_ll(0xFFFF);
     APP_TIMER_DEF(single_timer);
     app_timer_create(&single_timer, APP_TIMER_MODE_SINGLE_SHOT, led_flash_all_off);
@@ -72,7 +74,7 @@ void led_set_bit(enum led_bit_usage bit, bool state)
  * @param val LED状态
  * @param mask 范围 mask
  */
-void led_set_mask(uint16_t val, uint16_t mask)
+void led_set_mask(uint16_t mask, uint16_t val)
 {
     uint16_t state = (led_state | mask) + (val & mask);
     led_change_handler(state);
@@ -85,7 +87,7 @@ void led_set_mask(uint16_t val, uint16_t mask)
  */
 void led_set(uint8_t usb_led)
 {
-    led_set_mask(usb_led, 0x001F);
+    led_set_mask(0x001F, usb_led);
 }
 
 /**

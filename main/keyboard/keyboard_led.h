@@ -48,10 +48,10 @@ void led_change_handler(uint16_t val);
 /**
  * @brief 设定指定范围内的LED状态
  * 
- * @param val LED状态
  * @param mask 范围 mask
+ * @param val LED状态
  */
-void led_set_mask(uint16_t val, uint16_t mask);
+void led_set_mask(uint16_t mask, uint16_t val);
 /**
  * @brief 设置指定位置的LED状态
  * 
