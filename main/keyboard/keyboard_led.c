@@ -46,7 +46,7 @@ void led_flash_all_timer(void) {
     led_set_state_ll(0xFFFF);
     APP_TIMER_DEF(single_timer);
     app_timer_create(&single_timer, APP_TIMER_MODE_SINGLE_SHOT, led_flash_all_off);
-    app_timer_start(&single_timer, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
+    app_timer_start(single_timer, APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER), NULL);
 }
 
 /**
@@ -215,7 +215,7 @@ void led_set_state_ll(uint16_t num)
 #endif
 }
 
-#ifdef LED_AUTOOFF_TIME
+#if LED_AUTOOFF_TIME > 0
 
 bool counting;
 bool led_autooff = true;
