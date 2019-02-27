@@ -76,7 +76,7 @@ void led_set_bit(enum led_bit_usage bit, bool state)
  */
 void led_set_mask(uint16_t mask, uint16_t val)
 {
-    uint16_t state = (led_state | ~mask) + (val & mask);
+    uint16_t state = (led_state & ~mask) + (val & mask);
     led_change_handler(state);
 }
 
