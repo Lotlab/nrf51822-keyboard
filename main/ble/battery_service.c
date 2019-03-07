@@ -244,6 +244,8 @@ static void ADC_appsh_mes_evt_handler(void* p_event_data, uint16_t event_size)
         if (currVot == adc2vottage(adc_result_calc()) && currVot > 0) {
             ADC_switch_to_slow_mode();
             battery_level_update();
+        } else {
+            currVot = adc2vottage(adc_result_calc());
         }
     }
 }
